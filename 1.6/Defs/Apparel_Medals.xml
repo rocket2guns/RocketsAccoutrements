@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+	<RitualOutcomeEffectDef>
+		<defName>ROCKET_AwardMedalOutcome</defName>
+		<description>The medal is awarded to the colonist.</description>
+		<workerClass>MedalMod.RitualOutcomeEffectWorkerAwardMedal</workerClass>
+		<comps/>
+	</RitualOutcomeEffectDef>
+	
+	<PreceptDef>
+		<defName>ROCKET_MedalCeremonyPrecept</defName>
+		<issue>Ritual</issue>
+		<label>award ceremony</label>
+		<description>An official ceremony to bestow a medal upon a deserving colonist.</description>
+		<preceptClass>Precept_Ritual</preceptClass>
+		<ritualPatternBase>ROCKET_AwardMedalPattern</ritualPatternBase>
+		<visible>false</visible>
+		<countsTowardsPreceptLimit>false</countsTowardsPreceptLimit>
+	</PreceptDef>
+	
+	<DutyDef>
+		<defName>SpeakOnCellAward</defName>
+		<hook>HighPriority</hook>
+		<socialModeMax>Off</socialModeMax>
+		<ritualSpectateTarget>true</ritualSpectateTarget>
+		<thinkNode Class="ThinkNode_Priority">
+			<subNodes>
+				<!-- Goto my spot -->
+				<li Class="JobGiver_GotoTravelDestination">
+					<exactCell>true</exactCell>
+					<locomotionUrgency>Jog</locomotionUrgency>
+					<ritualTagOnArrival>Arrived</ritualTagOnArrival>
+				</li>
+
+				<!-- Arrived -->
+				<li Class="ThinkNode_ConditionalAtDutyLocation">
+					<subNodes>
+						<li Class="MedalMod.JobGiver_AwardSpeech">
+							<soundDefMale>Speech_Funeral_Male</soundDefMale>
+							<soundDefFemale>Speech_Funeral_Female</soundDefFemale>
+						</li>
+					</subNodes>
+				</li>
+			</subNodes>
+		</thinkNode>
+	</DutyDef>
+	
+	<RitualBehaviorDef>
+		<defName>ROCKET_AwardMedalBehavior</defName>
+		<durationTicks>5000</durationTicks>
+		<spectatorsLabel>Spectators</spectatorsLabel>
+		<spectatorGerund>spectate</spectatorGerund>
+		<roles>
+			<li Class="MedalMod.RitualRole_Presenter">
+				<label>leader</label>
+				<id>leader</id>
+				<required>True</required>
+				<maxCount>1</maxCount>
+				<countsAsParticipant>False</countsAsParticipant>
+				<allowChild>false</allowChild>
+				<mustBeAbleToReachTarget>True</mustBeAbleToReachTarget>
+			</li>
+			<li Class="RitualRoleColonist">
+				<id>awardee</id>
+				<label>Awardee</label>
+				<required>True</required>
+				<maxCount>1</maxCount>
+				<mustBeAbleToReachTarget>True</mustBeAbleToReachTarget>
+			</li>
+		</roles>
+		<stages>
+			<li>
+				<defaultDuty>Spectate</defaultDuty>
+				<allowedSpectateSidesOverride>Vertical</allowedSpectateSidesOverride>
+				<spectateDistanceOverride>1</spectateDistanceOverride>
+				<spectatorsRequired>true</spectatorsRequired>
+				<endTriggers>
+					<li Class="StageEndTrigger_RolesArrived">
+						<roleIds>
+							<li>leader</li>
+							<li>awardee</li>
+						</roleIds>
+					</li>
+				</endTriggers>
+				<roleBehaviors>
+					<li>
+						<roleId>leader</roleId>
+						<dutyDef>ArriveToCell</dutyDef>
+						<customPositions>
+							<li Class="RitualPosition_BehindThingCenter"/>
+						</customPositions>
+					</li>
+					<li>
+						<roleId>awardee</roleId>
+						<dutyDef>ArriveToCell</dutyDef>
+						<customPositions>
+							<li Class="RitualPosition_InFrontThingCenter"/>
+						</customPositions>
+					</li>
+				</roleBehaviors>				
+				<preAction Class="MedalMod.RitualStageAction_StartBestowal"/>
+				<highlightRolePawns>
+					<li>awardee</li>
+					<li>leader</li>
+				</highlightRolePawns>
+			</li>
+			<li>
+				<defaultDuty>Spectate</defaultDuty>
+				<allowedSpectateSidesOverride>Vertical</allowedSpectateSidesOverride>
+				<spectateDistanceOverride>1</spectateDistanceOverride>
+				<endTriggers>
+					<li Class="StageEndTrigger_DurationPercentage">
+						<percentage>1</percentage>
+					</li>
+				</endTriggers>
+				<roleBehaviors>
+					<li>
+						<roleId>leader</roleId>
+						<dutyDef>SpeakOnCellAward</dutyDef>
+						<speakerInteraction>Speech_Leader</speakerInteraction>
+						<customPositions>
+							<li Class="RitualPosition_BesideThing"/>
+						</customPositions>
+					</li>
+				</roleBehaviors>
+				<visualEffectDef>Speech</visualEffectDef>
+			</li>
+		</stages>
+	</RitualBehaviorDef>
+	
+	<RitualPatternDef>
+		<defName>ROCKET_AwardMedalPattern</defName>
+		<ritualBehavior>ROCKET_AwardMedalBehavior</ritualBehavior>
+		<ritualOutcomeEffect>ROCKET_AwardMedalOutcome</ritualOutcomeEffect>
+		<ritualExpectedDesc>The colony's leader will bestow a medal upon a deserving colonist.</ritualExpectedDesc>
+	</RitualPatternDef>
+
+	<ThoughtDef>
+		<defName>ROCKET_AwardedMedal_Thought</defName>
+		<durationDays>15</durationDays>
+		<stages>
+			<li>
+				<label>awarded a medal</label>
+				<description>I was recognized for my service. It is an honor to wear this.</description>
+				<baseMoodEffect>10</baseMoodEffect>
+			</li>
+		</stages>
+	</ThoughtDef>
+
+	<ApparelLayerDef>
+		<defName>ROCKET_MedalLayer</defName>
+		<label>medals</label>
+		<drawOrder>400</drawOrder>
+	</ApparelLayerDef>
+
+	<ThingDef ParentName="ApparelMakeableBase" Name="ROCKET_MedalBase" Abstract="True">
+		<thingClass>MedalMod.RocketMedal</thingClass>
+		<comps Inherit="False">
+			<li Class="CompProperties_Forbiddable"/>
+			<li Class="CompProperties_Biocodable"/>
+		</comps>
+		<graphicData>
+			<graphicClass>Graphic_Single</graphicClass>
+			<shaderType>CutoutComplex</shaderType>
+			<drawSize>0.75</drawSize>
+		</graphicData>
+		<costList>
+			<Gold>5</Gold>
+			<Hyperweave>20</Hyperweave>
+		</costList>
+		<equippedStatOffsets>
+			<PawnBeauty>0.1</PawnBeauty>
+		</equippedStatOffsets>
+		
+		<statBases>
+			<MaxHitPoints>500</MaxHitPoints>
+			<WorkToMake>10000</WorkToMake>
+			<Mass>0.01</Mass>
+			<EquipDelay>0.5</EquipDelay>
+			<DeteriorationRate>0</DeteriorationRate>
+		</statBases>
+		
+		<thingCategories Inherit="False">
+			<li>ROCKET_Apparel_Medals</li>
+		</thingCategories>
+		
+		<apparel>
+			<countsAsClothingForNudity>false</countsAsClothingForNudity>
+			<layers>
+				<li>ROCKET_MedalLayer</li>
+			</layers>
+			<bodyPartGroups>
+				<li>Torso</li>
+			</bodyPartGroups>
+		</apparel>
+		
+		<recipeMaker>
+			<workSpeedStat>GeneralLaborSpeed</workSpeedStat>
+			<workSkill>Crafting</workSkill>
+			<effectWorking>Smith</effectWorking>
+			<soundWorking>Recipe_Smith</soundWorking>
+			<researchPrerequisite>NobleApparel</researchPrerequisite>
+			<skillRequirements>
+				<Crafting>8</Crafting>
+			</skillRequirements>
+			<recipeUsers Inherit="False">
+				<li>ElectricSmithy</li>
+				<li>FueledSmithy</li>
+			</recipeUsers>
+		</recipeMaker>
+	</ThingDef>
+	
+	<ThingDef ParentName="ROCKET_MedalBase">
+		<defName>ROCKET_Medal_LongService</defName>
+		<label>long service medal</label>
+		<description>Awarded for those who have served greater than most.</description>
+		<graphicData>
+			<texPath>Things/Medals/LongService</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/LongService</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<WorkSpeedGlobal>0.02</WorkSpeedGlobal>
+		</equippedStatOffsets>
+	</ThingDef>
+	
+	<ThingDef ParentName="ROCKET_MedalBase">
+		<defName>ROCKET_Medal_PurpleHeart</defName>
+		<label>purple heart</label>
+		<description>Awarded for serious injuries while in service.</description>
+		<graphicData>
+			<texPath>Things/Medals/PurpleHeart</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/PurpleHeart</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<PainShockThreshold>0.02</PainShockThreshold>
+		</equippedStatOffsets>
+	</ThingDef>
+	
+	<ThingDef ParentName="ROCKET_MedalBase">
+		<defName>ROCKET_Medal_DistinguishedService</defName>
+		<label>distinguished service medal</label>
+		<description>A service medal awarded for those who have distinguished themselves.</description>
+		<graphicData>
+			<texPath>Things/Medals/DistinguishedService</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/DistinguishedService</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<GeneralLaborSpeed>0.03</GeneralLaborSpeed>
+			<SocialImpact>0.03</SocialImpact>
+		</equippedStatOffsets>
+	</ThingDef>
+	
+	<ThingDef ParentName="ROCKET_MedalBase">
+		<defName>ROCKET_Medal_BronzeStar</defName>
+		<label>bronze star</label>
+		<description>A bronze star awarded for bravery.</description>
+		<graphicData>
+			<texPath>Things/Medals/BronzeStar</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/BronzeStar</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<SocialImpact>0.02</SocialImpact>
+		</equippedStatOffsets>
+	</ThingDef>
+	
+	<ThingDef ParentName="ROCKET_MedalBase">
+		<defName>ROCKET_Medal_SpaceCampaign</defName>
+		<label>space campaign medal</label>
+		<description>Awarded for honorable service in space operations.</description>
+		<graphicData>
+			<texPath>Things/Medals/SpaceCampaign</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/SpaceCampaign</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<SocialImpact>0.01</SocialImpact>
+		</equippedStatOffsets>
+	</ThingDef>
+	
+	<ThingDef ParentName="ROCKET_MedalBase">
+		<defName>ROCKET_Medal_InsectoidCampaign</defName>
+		<label>insectoid campaign medal</label>
+		<description>Awarded for honorable service in insectoid operations.</description>
+		<graphicData>
+			<texPath>Things/Medals/InsectoidCampaign</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/InsectoidCampaign</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<SocialImpact>0.01</SocialImpact>
+		</equippedStatOffsets>
+	</ThingDef>
+	
+	<ThingDef ParentName="ROCKET_MedalBase">
+		<defName>ROCKET_Medal_PolarCampaign</defName>
+		<label>polar campaign medal</label>
+		<description>Awarded for honorable service in polar operations.</description>
+		<graphicData>
+			<texPath>Things/Medals/PolarCampaign</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/PolarCampaign</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<SocialImpact>0.01</SocialImpact>
+		</equippedStatOffsets>
+	</ThingDef>
+	
+	<ThingDef ParentName="ROCKET_MedalBase">
+		<defName>ROCKET_Medal_SilverStar</defName>
+		<label>silver star</label>
+		<description>A silver emblazened star awarded for extreme bravery.</description>
+		<graphicData>
+			<texPath>Things/Medals/SilverStar</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/SilverStar</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<SocialImpact>0.02</SocialImpact>
+		</equippedStatOffsets>
+	</ThingDef>
+	
+	<ThingDef ParentName="ROCKET_MedalBase">
+		<defName>ROCKET_Medal_GoldCross</defName>
+		<label>gold cross</label>
+		<description>The highest bravery honor, featuring a gold cross.</description>
+		<graphicData>
+			<texPath>Things/Medals/GoldCross</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/GoldCross</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<SocialImpact>0.1</SocialImpact>
+			<PainShockThreshold>0.05</PainShockThreshold>
+		</equippedStatOffsets>
+	</ThingDef>
+</Defs>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+	<RulePackDef>
+		<defName>ROCKET_Speech_AwardMedal_Rules</defName>
+		<rulePack>
+			<rulesStrings>
+				<li>r_logentry->[INITIATOR_nameDef] [speech_verb] [RECIPIENT_nameDef] for [their_actions].</li>
+				<li>r_logentry->[INITIATOR_nameDef] gave a [speech_adjective] speech honoring [RECIPIENT_nameDef]'s [heroic_trait].</li>
+				
+				<li>speech_verb->praised</li>
+				<li>speech_verb->commended</li>
+				<li>speech_verb->honored</li>
+				<li>speech_verb->saluted</li>
+
+				<li>speech_adjective->rousing</li>
+				<li>speech_adjective->solemn</li>
+				<li>speech_adjective->tearful</li>
+				<li>speech_adjective->passionate</li>
+
+				<li>heroic_trait->achievements</li>
+				<li>heroic_trait->unwavering courage</li>
+				<li>heroic_trait->tireless dedication</li>
+				<li>heroic_trait->bravery</li>
+
+				<li>their_actions->standing firm against the odds</li>
+				<li>their_actions->their sacrifices for the colony</li>
+				<li>their_actions->bleeding for their fellow colonists</li>
+				<li>their_actions->exemplary service</li>
+			</rulesStrings>
+		</rulePack>
+	</RulePackDef>
+	<InteractionDef>
+		<defName>ROCKET_Speech_AwardMedal</defName>
+		<label>award speech</label>
+		<workerClass>InteractionWorker</workerClass>
+		<symbol>Things/Mote/SpeechSymbols/Speech</symbol>
+		
+		<logRulesInitiator>
+			<include>
+				<li>ROCKET_Speech_AwardMedal_Rules</li>
+			</include>
+		</logRulesInitiator>
+	</InteractionDef>
+	
+	<TaleDef>
+		<defName>ROCKET_AwardedMedalTale</defName>
+		<label>medal awarded</label>
+		<taleClass>Tale_DoublePawn</taleClass>
+		<type>Volatile</type>
+		<baseInterest>30.0</baseInterest>
+		<firstPawnSymbol>PRESENTER</firstPawnSymbol>
+        <secondPawnSymbol>AWARDEE</secondPawnSymbol>
+		<rulePack>
+			<rulesStrings>
+				<li>tale_noun->[PRESENTER_nameDef] awarding a medal to [AWARDEE_nameDef]</li>
+				<li>tale_noun->[AWARDEE_nameDef] receiving a medal from [PRESENTER_nameDef]</li>
+				<li>tale_noun->the honoring of [AWARDEE_nameDef]</li>
+
+				<li>image->[PRESENTER_nameFull] is standing tall, proudly pinning a gleaming medal onto [AWARDEE_nameFull]'s chest. [circumstance_group]</li>
+				<li>image->[PRESENTER_nameFull] is saluting [AWARDEE_nameFull], who is wearing a newly awarded medal. [circumstance_group]</li>
+				<li>image->[AWARDEE_nameFull] looks [AWARDEE_adjective] as they are presented with a medal by [PRESENTER_nameDef]. [circumstance_group]</li>
+                
+				<li>circumstance_phrase->The colony watches in silent awe.</li>
+				<li>circumstance_phrase->The medal shines brightly in the light.</li>
+				<li>circumstance_phrase->Confetti appears to be falling around them.</li>
+                
+				<li>desc_sentence->[AWARDEE_nameDef] looks incredibly proud.</li>
+				<li>desc_sentence->[PRESENTER_nameDef] wears a solemn expression of respect.</li>
+			</rulesStrings>
+		</rulePack>
+	</TaleDef>
+</Defs>
