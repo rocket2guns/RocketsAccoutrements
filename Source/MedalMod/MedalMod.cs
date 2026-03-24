@@ -38,12 +38,12 @@ namespace MedalMod
             listing.CheckboxLabeled(
                 "Medals Require Ceremony",  
                 ref Settings.MedalsRequireCeremony, 
-                "If enabled, medals can only be awarded to colonists who have gathered the colony..."
+                "If enabled, medals can only be awarded to colonists via an award ceremony. If disabled, medals will be considered awarded by the first person to wear them."
             );
             listing.CheckboxLabeled(
                 "Lock Medals on Pawns", 
                 ref Settings.LockMedalsOnPawns, 
-                "If enabled, once a medal is awarded to a pawn, it cannot be removed..."
+                "If enabled, once a medal is awarded to a pawn, it cannot be removed. If disabled, medals will be removed when a pawn is stripped or drops them voluntarily. They will remain biocoded."
             );
             listing.Gap(6f);
             listing.Label($"Medal Size: {Settings.MedalScale.ToStringPercent()}");
@@ -60,7 +60,7 @@ namespace MedalMod
             listing.CheckboxLabeled(
                 "Ranks Ignore Outfit Policies", 
                 ref Settings.RanksIgnorePolicies, 
-                "If enabled, pawns will never automatically remove ranks when changing outfits..."
+                "If enabled, pawns will never automatically remove ranks when changing outfits. This allows you to force wear a rank item through clothing priorities."
             );
 
             listing.End();
@@ -73,7 +73,7 @@ namespace MedalMod
         // Default it to true so your intended behavior is the standard
         public bool RanksIgnorePolicies = true;
         public bool MedalsRequireCeremony = true;
-        public bool LockMedalsOnPawns = true;
+        public bool LockMedalsOnPawns = false;
         public float MedalScale = 1f;
 
         // This method saves and loads the setting
@@ -82,7 +82,7 @@ namespace MedalMod
             base.ExposeData();
             Scribe_Values.Look(ref RanksIgnorePolicies, "RanksIgnorePolicies", true);
             Scribe_Values.Look(ref MedalsRequireCeremony, "MedalsRequireCeremony", true);
-            Scribe_Values.Look(ref LockMedalsOnPawns, "LockMedalsOnPawns", true);
+            Scribe_Values.Look(ref LockMedalsOnPawns, "LockMedalsOnPawns", false);
             Scribe_Values.Look(ref MedalScale, "MedalScale", 1f);
         }
     }
@@ -132,7 +132,7 @@ namespace MedalMod
             if (awardee != null && presenter != null)
             {
                 if (medal.Spawned) medal.DeSpawn();
-                awardee.apparel.Wear(medal, false, MedalMod.Settings.MedalsRequireCeremony);
+                awardee.apparel.Wear(medal, false, MedalMod.Settings.LockMedalsOnPawns);
         
                 var awardedThought = DefDatabase<ThoughtDef>.GetNamed("ROCKET_AwardedMedal_Thought", false);
                 if (awardedThought != null) 
