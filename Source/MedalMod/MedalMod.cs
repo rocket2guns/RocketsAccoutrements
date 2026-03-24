@@ -30,10 +30,10 @@ namespace MedalMod
             listing.Begin(inRect);
 
             // --- SECTION: MEDALS ---
+            listing.Gap(32f);
             Text.Font = GameFont.Medium;
             listing.Label("Medals");
             Text.Font = GameFont.Small;
-            listing.GapLine();
             listing.Gap(6f);
             listing.CheckboxLabeled(
                 "Medals Require Ceremony",  
@@ -45,24 +45,26 @@ namespace MedalMod
                 ref Settings.LockMedalsOnPawns, 
                 "If enabled, once a medal is awarded to a pawn, it cannot be removed. If disabled, medals will be removed when a pawn is stripped or drops them voluntarily. They will remain biocoded."
             );
+            listing.CheckboxLabeled(
+                "Draw Medals on Pawns", 
+                ref Settings.DrawMedalsOnPawns, 
+                "If enabled, medals will be rendered on pawns. Disabling this will stop medals being drawn on pawns. Use this to turn their rendering off."
+            );
             listing.Gap(6f);
-            listing.Label($"Medal Size: {Settings.MedalScale.ToStringPercent()}");
+            listing.Label($"Worn Size: {Settings.MedalScale.ToStringPercent()}");
             Settings.MedalScale = listing.Slider(Settings.MedalScale, 0.1f, 2.0f);
 
             // --- SECTION: RANKS ---
-            listing.Gap(24f);
+            listing.Gap(32f);
             Text.Font = GameFont.Medium;
             listing.Label("Ranks");
             Text.Font = GameFont.Small;
-            listing.GapLine();
             listing.Gap(6f);
-
             listing.CheckboxLabeled(
                 "Ranks Ignore Outfit Policies", 
                 ref Settings.RanksIgnorePolicies, 
                 "If enabled, pawns will never automatically remove ranks when changing outfits. This allows you to force wear a rank item through clothing priorities."
             );
-
             listing.End();
             base.DoSettingsWindowContents(inRect);
         }
@@ -74,6 +76,7 @@ namespace MedalMod
         public bool RanksIgnorePolicies = true;
         public bool MedalsRequireCeremony = true;
         public bool LockMedalsOnPawns = false;
+        public bool DrawMedalsOnPawns = true;
         public float MedalScale = 1f;
 
         // This method saves and loads the setting
@@ -83,6 +86,7 @@ namespace MedalMod
             Scribe_Values.Look(ref RanksIgnorePolicies, "RanksIgnorePolicies", true);
             Scribe_Values.Look(ref MedalsRequireCeremony, "MedalsRequireCeremony", true);
             Scribe_Values.Look(ref LockMedalsOnPawns, "LockMedalsOnPawns", false);
+            Scribe_Values.Look(ref DrawMedalsOnPawns, "DrawMedalsOnPawns", true);
             Scribe_Values.Look(ref MedalScale, "MedalScale", 1f);
         }
     }
@@ -132,7 +136,7 @@ namespace MedalMod
             if (awardee != null && presenter != null)
             {
                 if (medal.Spawned) medal.DeSpawn();
-                awardee.apparel.Wear(medal, false, MedalMod.Settings.LockMedalsOnPawns);
+                awardee.apparel.Wear(medal, false, false);
         
                 var awardedThought = DefDatabase<ThoughtDef>.GetNamed("ROCKET_AwardedMedal_Thought", false);
                 if (awardedThought != null) 
@@ -245,13 +249,16 @@ namespace MedalMod
             var awardCeremonyBtn = new Command_Action
             {
                 defaultLabel = "Award Ceremony",
-                defaultDesc = "Gather the colony to have the Leader officially bestow this medal upon a colonist.",
+                defaultDesc = "Gather the colony to officially bestow this medal upon a colonist.",
                 icon = this.def.uiIcon, 
                 action = StartMedalRitual
             };
             
             if (!ModsConfig.IdeologyActive)
                 awardCeremonyBtn.Disable("Ideology DLC must be active to award medals.");
+            
+            if (BiocodeComp.Biocoded)
+                awardCeremonyBtn.Disable("Medal has already been awarded.");
 
             // Check if the player actually has a leader in their colony to enable the button
             if (!ColonyHasPresenter(out _)) 
@@ -375,7 +382,7 @@ namespace MedalMod
     {
         public static void Postfix(Apparel __0, ref bool __result)
         {
-            if (__0 is not RocketRank) return;
+            if (__0 is not RocketMedal || !MedalMod.Settings.LockMedalsOnPawns) return;
             __result = true;
         }
     }
@@ -385,11 +392,8 @@ namespace MedalMod
     {
         public static void Postfix(Pawn pawn, Apparel ap, ref float __result)
         {
-            if (ap is not RocketMedal medal) return;
-            var comp = medal.BiocodeComp;
-            if (comp is { Biocoded: true } && comp.CodedPawn == pawn)
-                return;
-            __result = -10000f;
+            if (ap is RocketMedal || (MedalMod.Settings.RanksIgnorePolicies && ap is RocketRank)) 
+                __result = -10000f;
         }
     }
     
@@ -415,7 +419,7 @@ namespace MedalMod
             var comp = medal.BiocodeComp;
             if (comp == null) return true;
 
-            if (MedalMod.Settings.MedalsRequireCeremony && !CheckRitualStatus(__instance.pawn))
+            if (MedalMod.Settings.MedalsRequireCeremony && !CheckRitualStatus(__instance.pawn) && !comp.Biocoded)
             {
                 Messages.Message($"Medals can only be awarded via ceremonies", MessageTypeDefOf.RejectInput, false);
                 return false;
@@ -434,7 +438,6 @@ namespace MedalMod
                 var nameValue = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(cleanLabel);
                 Log.Message($"[MedalMod] Biocoded {cleanLabel} to {__instance.pawn.LabelShort}");
                 Messages.Message($"{__instance.pawn.NameShortColored} has been awarded the {nameValue}", __instance.pawn, MessageTypeDefOf.PositiveEvent);
-                
                 if (__instance.pawn.needs is { mood: not null })
                 {
                     var awardedThought = DefDatabase<ThoughtDef>.GetNamed("ROCKET_AwardedMedal_Thought", false);
@@ -462,9 +465,18 @@ namespace MedalMod
         public static void Postfix(PawnRenderNode node, PawnDrawParms parms, ref bool __result)
         {
             if (!__result) return;
-            if (node is not PawnRenderNode_Apparel apparelNode || apparelNode.apparel is not RocketMedal) return;
-            if (parms.facing == Rot4.North) 
+            if (node is not PawnRenderNode_Apparel { apparel: RocketMedal }) return;
+            if (!MedalMod.Settings.DrawMedalsOnPawns)
+            {
                 __result = false;
+                return;
+            }
+
+            if (parms.facing == Rot4.North)
+            {
+                __result = false;
+                return;
+            }
         }
     }
     
@@ -533,6 +545,15 @@ namespace MedalMod
         }
     }
     
+    [HarmonyPatch(typeof(ThingFilter), nameof(ThingFilter.Allows), new[] { typeof(ThingDef) })]
+    public static class PatchRankPolicyBypass
+    {
+        public static void Postfix(ThingDef def, ref bool __result)
+        {
+            if (MedalMod.Settings.RanksIgnorePolicies && typeof(RocketRank).IsAssignableFrom(def.thingClass)) 
+                __result = true;
+        }
+    }
     
     [HarmonyPatch(typeof(PawnRenderNodeWorker), nameof(PawnRenderNodeWorker.OffsetFor))]
     public static class PatchMedalOffset
