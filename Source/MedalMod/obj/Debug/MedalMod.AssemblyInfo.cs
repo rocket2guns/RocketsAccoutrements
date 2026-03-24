@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MedalMod")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2a8776ccb1bcfb8165f8fe68e5df2a5685cb89d1")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cdd9d80c975a27ea3df1f346ef7547485ff927c0")]
 [assembly: System.Reflection.AssemblyProductAttribute("MedalMod")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MedalMod")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -50,9 +50,10 @@ namespace MedalMod
                 ref Settings.DrawMedalsOnPawns, 
                 "If enabled, medals will be rendered on pawns. Disabling this will stop medals being drawn on pawns. Use this to turn their rendering off."
             );
-            listing.Gap(6f);
             listing.Label($"Worn Size: {Settings.MedalScale.ToStringPercent()}");
             Settings.MedalScale = listing.Slider(Settings.MedalScale, 0.1f, 2.0f);
+            listing.Label($"Maximum Rows: {Settings.MaxDisplayedMedals.ToStringCached()}");
+            listing.IntAdjuster(ref Settings.MaxDisplayedMedals, 1);
 
             // --- SECTION: RANKS ---
             listing.Gap(32f);
@@ -77,7 +78,8 @@ namespace MedalMod
         public bool MedalsRequireCeremony = true;
         public bool LockMedalsOnPawns = false;
         public bool DrawMedalsOnPawns = true;
-        public float MedalScale = 1f;
+        public float MedalScale = 0.8f;
+        public int MaxDisplayedMedals = 9;
 
         // This method saves and loads the setting
         public override void ExposeData()
@@ -87,7 +89,8 @@ namespace MedalMod
             Scribe_Values.Look(ref MedalsRequireCeremony, "MedalsRequireCeremony", true);
             Scribe_Values.Look(ref LockMedalsOnPawns, "LockMedalsOnPawns", false);
             Scribe_Values.Look(ref DrawMedalsOnPawns, "DrawMedalsOnPawns", true);
-            Scribe_Values.Look(ref MedalScale, "MedalScale", 1f);
+            Scribe_Values.Look(ref MaxDisplayedMedals, "MaxDisplayedMedals", 9);
+            Scribe_Values.Look(ref MedalScale, "MedalScale", 0.8f);
         }
     }
     
@@ -465,7 +468,7 @@ namespace MedalMod
         public static void Postfix(PawnRenderNode node, PawnDrawParms parms, ref bool __result)
         {
             if (!__result) return;
-            if (node is not PawnRenderNode_Apparel { apparel: RocketMedal }) return;
+            if (node is not PawnRenderNode_Apparel { apparel: RocketMedal apparelNode}) return;
             if (!MedalMod.Settings.DrawMedalsOnPawns)
             {
                 __result = false;
@@ -473,6 +476,28 @@ namespace MedalMod
             }
 
             if (parms.facing == Rot4.North)
+            {
+                __result = false;
+                return;
+            }
+            
+            var worn = parms.pawn.apparel.WornApparel; // This is a List<Apparel>
+            var totalMedals = 0;
+            var myIndex = -1;
+
+            for (var i = 0; i < worn.Count; i++)
+            {
+                if (worn[i] is RocketMedal)
+                {
+                    if (worn[i] == apparelNode)
+                        myIndex = totalMedals;
+            
+                    totalMedals++;
+                }
+            }
+            if (myIndex == -1) return;
+
+            if (myIndex >= MedalMod.Settings.MaxDisplayedMedals)
             {
                 __result = false;
                 return;

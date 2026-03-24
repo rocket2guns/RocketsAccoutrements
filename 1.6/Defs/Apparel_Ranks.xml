@@ -3,7 +3,7 @@
 	<ApparelLayerDef>
 		<defName>ROCKET_RankLayer</defName>
 		<label>rank</label>
-		<drawOrder>400</drawOrder>
+		<drawOrder>350</drawOrder>
 	</ApparelLayerDef>
 	
   <ThingDef ParentName="ApparelMakeableBase" Name="ROCKET_Ranks" Abstract="True">  
