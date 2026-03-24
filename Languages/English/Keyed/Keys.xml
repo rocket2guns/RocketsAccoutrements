@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LanguageData>	
+	<ROCKET_MedalsTab>Medals</ROCKET_MedalsTab>
+	<ROCKET_NoMedals>No medals have been awarded to this colonist.</ROCKET_NoMedals>
+	<ROCKET_MedalAwardedTo>Awarded To: {0}</ROCKET_MedalAwardedTo>
+</LanguageData>

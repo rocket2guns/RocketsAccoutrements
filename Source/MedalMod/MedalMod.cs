@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
+using System.Text;
 using HarmonyLib;
 using RimWorld;
 using Verse;
@@ -11,6 +12,13 @@ using Verse.Grammar;
 
 namespace MedalMod
 {
+    [StaticConstructorOnStartup]
+    public static class MedalTextures
+    {
+        public static readonly Texture2D CitationIcon = 
+            ContentFinder<Texture2D>.Get("UI/ButtonCitation");
+    }
+    
     public class MedalMod : Mod
     {
         public static MedalModSettings Settings;
@@ -50,6 +58,11 @@ namespace MedalMod
                 ref Settings.DrawMedalsOnPawns, 
                 "If enabled, medals will be rendered on pawns. Disabling this will stop medals being drawn on pawns. Use this to turn their rendering off."
             );
+            listing.CheckboxLabeled(
+                "Prompt for Citation during Ritual", 
+                ref Settings.PromptForCitationDuringRitual, 
+                "If enabled, a dialog will appear during award ceremonies to allow the user to enter a citation for the medal if one has not already been added to the medal. If disable a window will not appear, but citations can still be added prior to ceremony commencing."
+            );
             listing.Label($"Worn Size: {Settings.MedalScale.ToStringPercent()}");
             Settings.MedalScale = listing.Slider(Settings.MedalScale, 0.1f, 2.0f);
             listing.Label($"Maximum Rows: {Settings.MaxDisplayedMedals.ToStringCached()}");
@@ -78,6 +91,7 @@ namespace MedalMod
         public bool MedalsRequireCeremony = true;
         public bool LockMedalsOnPawns = false;
         public bool DrawMedalsOnPawns = true;
+        public bool PromptForCitationDuringRitual = true;
         public float MedalScale = 0.8f;
         public int MaxDisplayedMedals = 9;
 
@@ -90,7 +104,34 @@ namespace MedalMod
             Scribe_Values.Look(ref LockMedalsOnPawns, "LockMedalsOnPawns", false);
             Scribe_Values.Look(ref DrawMedalsOnPawns, "DrawMedalsOnPawns", true);
             Scribe_Values.Look(ref MaxDisplayedMedals, "MaxDisplayedMedals", 9);
+            Scribe_Values.Look(ref PromptForCitationDuringRitual, "PromptForCitationDuringRitual", true);
             Scribe_Values.Look(ref MedalScale, "MedalScale", 0.8f);
+        }
+    }
+    
+    public static class CeremonyQuality
+    {
+        // Returns 0-3 matching the thought stage index
+        public static int GetStageIndex(int attendees, int totalColonists)
+        {
+            if (totalColonists <= 0) return 0;
+            var ratio = (float)attendees / totalColonists;
+
+            if (ratio >= 0.8f) return 3;  // Legendary: 80%+ of colony attended
+            if (ratio >= 0.5f) return 2;  // Grand: half the colony
+            if (ratio >= 0.25f) return 1; // Decent: at least a quarter
+            return 0;                      // Poor: barely anyone
+        }
+
+        public static string GetQualityLabel(int stageIndex)
+        {
+            switch (stageIndex)
+            {
+                case 3: return "legendary";
+                case 2: return "grand";
+                case 1: return "decent";
+                default: return "poor";
+            }
         }
     }
     
@@ -102,6 +143,10 @@ namespace MedalMod
             var awardee = ritual.PawnWithRole("awardee");
             if (leader != null && awardee != null)
             {
+                if (MedalMod.Settings.PromptForCitationDuringRitual)
+                    if (ritual.selectedTarget.Thing is RocketMedal medal && medal.citation.NullOrEmpty())
+                        Find.WindowStack.Add(new Dialog_WriteCitation(medal));
+                
                 Messages.Message(
                     $"{leader.NameShortColored} has begun the official bestowal of a medal upon {awardee.NameShortColored}.", 
                     leader, // This makes the message clickable to jump to the leader
@@ -136,38 +181,62 @@ namespace MedalMod
             if (jobRitual.selectedTarget.Thing is not RocketMedal medal) return;
             var awardee = jobRitual.assignments.FirstAssignedPawn("awardee");
             var presenter = jobRitual.assignments.FirstAssignedPawn("leader");
-            if (awardee != null && presenter != null)
-            {
-                if (medal.Spawned) medal.DeSpawn();
-                awardee.apparel.Wear(medal, false, false);
-        
-                var awardedThought = DefDatabase<ThoughtDef>.GetNamed("ROCKET_AwardedMedal_Thought", false);
-                if (awardedThought != null) 
-                    awardee.needs?.mood?.thoughts.memories.TryGainMemory(awardedThought);
-                
-                var medalName = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(GenLabel.ThingLabel(medal.def, medal.Stuff, 1));
-                
-                var letterLabel = $"{medalName} Awarded";
-                var letterText = $"{awardee.NameFullColored} has been officially awarded a {medalName} by {presenter.NameFullColored}.\n\n" +
-                                    $"The ceremony was a success, and the deeds of {awardee.NameShortColored} have been recognized by the colony.";
+            if (awardee == null || presenter == null) return;
 
-                Find.LetterStack.ReceiveLetter(
-                    label: letterLabel, 
-                    text: letterText, 
-                    LetterDefOf.PositiveEvent, 
-                    lookTargets: awardee
-                );
-                
-                var medalTale = DefDatabase<TaleDef>.GetNamedSilentFail("ROCKET_AwardedMedalTale");
-                if (medalTale != null) 
-                    TaleRecorder.RecordTale(medalTale, presenter, awardee);
+            if (medal.citation.NullOrEmpty())
+                Find.WindowStack.Add(new Dialog_WriteCitation(medal));
+
+            if (medal.Spawned) medal.DeSpawn();
+            awardee.apparel.Wear(medal, false, false);
+
+            var attendees = totalPresence.Count;
+            var totalColonists = jobRitual.Map.mapPawns.FreeColonistsSpawnedCount;
+            var stageIndex = CeremonyQuality.GetStageIndex(attendees, totalColonists);
+            var qualityLabel = CeremonyQuality.GetQualityLabel(stageIndex);
+
+            var awardedThought = DefDatabase<ThoughtDef>.GetNamed("ROCKET_AwardedMedal_Thought", false);
+            var memory = (Thought_Memory)ThoughtMaker.MakeThought(awardedThought, stageIndex);
+            awardee.needs?.mood?.thoughts.memories.TryGainMemory(memory);
+
+            var spectatorThought = DefDatabase<ThoughtDef>.GetNamed("ROCKET_WitnessedMedalCeremony_Thought", false);
+            if (spectatorThought != null)
+            {
+                foreach (var pawn in totalPresence.Keys)
+                {
+                    if (pawn == awardee) continue;
+                    pawn.needs?.mood?.thoughts.memories.TryGainMemory(spectatorThought);
+                }
             }
+
+            var medalName = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(
+                GenLabel.ThingLabel(medal.def, medal.Stuff, 1));
+
+            var letterLabel = $"{medalName} Awarded";
+            var letterText = $"{awardee.NameFullColored} has been officially awarded a {medalName} " +
+                             $"by {presenter.NameFullColored}.\n\n" +
+                             $"The {qualityLabel} ceremony was attended by {attendees} colonists, " +
+                             $"and the deeds of {awardee.NameShortColored} have been recognized by the colony.";
+
+            if (!medal.citation.NullOrEmpty())
+                letterText += $"\n\nCitation: \"{medal.citation}\"";
+
+            Find.LetterStack.ReceiveLetter(
+                label: letterLabel,
+                text: letterText,
+                LetterDefOf.PositiveEvent,
+                lookTargets: awardee
+            );
+
+            var medalTale = DefDatabase<TaleDef>.GetNamedSilentFail("ROCKET_AwardedMedalTale");
+            if (medalTale != null)
+                TaleRecorder.RecordTale(medalTale, presenter, awardee);
+
+            Find.WindowStack.Add(new Dialog_MedalAwarded(medal, awardee, presenter));
         }
     }
     
     public class RitualRole_Presenter : RitualRoleColonist
     {
-        // The engine provides all these variables when it checks the UI
         public override bool AppliesToPawn(Pawn p, out string reason, TargetInfo selectedTarget, LordJob_Ritual ritual = null, RitualRoleAssignments assignments = null, Precept_Ritual precept = null, bool skipReason = false)
         {
             if (!base.AppliesToPawn(p, out reason, selectedTarget, ritual, assignments, precept, skipReason))
@@ -192,7 +261,7 @@ namespace MedalMod
             lordJob.Ritual.outcomeEffect ??= DefDatabase<RitualOutcomeEffectDef>.GetNamedSilentFail("ROCKET_AwardMedalOutcome").GetInstance();
             lordJob.Ritual.outcomeEffect.compDatas ??= new();
             var awardee = lordJob.assignments.FirstAssignedPawn("awardee");
-            if (awardee == null || !awardee.Spawned) return null;
+            if (awardee is not { Spawned: true }) return null;
             var targetB = (LocalTargetInfo)awardee;
             var job = JobMaker.MakeJob(JobDefOf.GiveSpeech, (LocalTargetInfo)pawn.Position, targetB);
             job.showSpeechBubbles = true;
@@ -216,10 +285,165 @@ namespace MedalMod
         
     }
     
+    public class Dialog_MedalAwarded : Window
+    {
+        private readonly RocketMedal medal;
+        private readonly Pawn awardee;
+        private readonly Pawn presenter;
+
+        public Dialog_MedalAwarded(RocketMedal medal, Pawn awardee, Pawn presenter)
+        {
+            this.medal = medal;
+            this.awardee = awardee;
+            this.presenter = presenter;
+            forcePause = true;
+            doCloseX = true;
+            absorbInputAroundWindow = true;
+        }
+
+        public override Vector2 InitialSize => new(500f, 400f);
+
+        public override void DoWindowContents(Rect inRect)
+        {
+            // Medal icon, large and centered
+            var iconRect = new Rect(inRect.x + (inRect.width - 128f) / 2f, inRect.y + 10f, 128f, 128f);
+            Widgets.ThingIcon(iconRect, medal);
+
+            // Medal name
+            var nameRect = new Rect(inRect.x, iconRect.yMax + 10f, inRect.width, 30f);
+            Text.Font = GameFont.Medium;
+            Text.Anchor = TextAnchor.MiddleCenter;
+            Widgets.Label(nameRect, medal.LabelCap);
+
+            // Awarded to / by
+            var detailRect = new Rect(inRect.x, nameRect.yMax + 6f, inRect.width, 24f);
+            Text.Font = GameFont.Small;
+            Widgets.Label(detailRect, $"Awarded to {awardee.NameFullColored} by {presenter.NameFullColored}");
+
+            // Citation
+            if (!medal.citation.NullOrEmpty())
+            {
+                var citationRect = new Rect(inRect.x + 20f, detailRect.yMax + 16f, inRect.width - 40f, 80f);
+                GUI.color = new Color(0.9f, 0.85f, 0.4f);
+                Text.Font = GameFont.Small;
+                Widgets.Label(citationRect, $"\"{medal.citation}\"");
+                GUI.color = Color.white;
+            }
+
+            Text.Font = GameFont.Small;
+            Text.Anchor = TextAnchor.UpperLeft;
+
+            // Close button
+            if (Widgets.ButtonText(new Rect(inRect.x + (inRect.width - 120f) / 2f, inRect.yMax - 45f, 120f, 35f), "Close"))
+                Close();
+        }
+    }
+    
+    public class Dialog_WriteCitation : Window
+    {
+        private readonly RocketMedal medal;
+        private string draft;
+        private const int MaxLength = 300;
+
+        public Dialog_WriteCitation(RocketMedal medal)
+        {
+            this.medal = medal;
+            this.draft = medal.citation ?? "";
+            
+            forcePause = true;
+            doCloseX = true;
+            absorbInputAroundWindow = true;
+            closeOnClickedOutside = false;
+        }
+
+        public override Vector2 InitialSize => new(500f, 350f);
+
+        public override void DoWindowContents(Rect inRect)
+        {
+            var listing = new Listing_Standard();
+            listing.Begin(inRect);
+
+            // Header
+            Text.Font = GameFont.Medium;
+            listing.Label(medal.LabelCap);
+            Text.Font = GameFont.Small;
+            listing.Gap(4f);
+
+            // Instruction
+            GUI.color = Color.gray;
+            listing.Label("Write the citation to be engraved on this medal. This will be permanently sealed once the medal is awarded.");
+            GUI.color = Color.white;
+            listing.Gap(8f);
+
+            // Text area
+            var textRect = listing.GetRect(150f);
+            draft = Widgets.TextArea(textRect, draft);
+            if (draft.Length > MaxLength)
+                draft = draft.Substring(0, MaxLength);
+
+            // Character count
+            listing.Gap(4f);
+            var countColor = draft.Length > MaxLength - 30 ? Color.yellow : Color.gray;
+            GUI.color = countColor;
+            listing.Label($"{draft.Length} / {MaxLength}");
+            GUI.color = Color.white;
+
+            listing.Gap(12f);
+
+            // Buttons
+            var buttonRect = listing.GetRect(35f);
+            var halfWidth = (buttonRect.width - 10f) / 2f;
+
+            // Save
+            if (Widgets.ButtonText(new Rect(buttonRect.x, buttonRect.y, halfWidth, 35f), "Confirm"))
+            {
+                medal.citation = draft.NullOrEmpty() ? null : draft.Trim();
+                Close();
+            }
+
+            // Clear
+            if (Widgets.ButtonText(new Rect(buttonRect.x + halfWidth + 10f, buttonRect.y, halfWidth, 35f), "Clear"))
+                draft = "";
+
+            listing.End();
+        }
+    }
+    
     public class RocketMedal : Apparel
     {
         public CompBiocodable BiocodeComp => field ??= this.GetComp<CompBiocodable>();
         private Pawn _cachedPawn = null;
+        
+        public string citation;
+        public int ceremonyQuality = -1; // -1 = not yet awarded
+        
+        public bool CitationLocked => BiocodeComp is { Biocoded: true };
+        
+        public override void ExposeData()
+        {
+            base.ExposeData();
+            Scribe_Values.Look(ref citation, "citation");
+            Scribe_Values.Look(ref ceremonyQuality, "ceremonyQuality", -1);
+        }
+
+        public override string GetInspectString()
+        {
+            var sb = new StringBuilder(base.GetInspectString());
+            if (!citation.NullOrEmpty())
+            {
+                if (sb.Length > 0) sb.AppendLine();
+                sb.Append('\'');
+                sb.Append(citation);
+                sb.Append('\'');
+            }
+            return sb.ToString();
+        }
+
+        private void OpenCitationDialog()
+        {
+            if (CitationLocked) return;
+            Find.WindowStack.Add(new Dialog_WriteCitation(this));
+        }
 
         public override string LabelNoCount
         {
@@ -239,7 +463,12 @@ namespace MedalMod
                         cleanLabel = comp.TransformLabel(cleanLabel);
                     }
                 }
-                field = $"{_cachedPawn.LabelShort}'s {cleanLabel}";
+                var sb = new StringBuilder();
+                sb.Append(_cachedPawn.LabelShort);
+                sb.Append("'s");
+                sb.Append(' ');
+                sb.Append(cleanLabel);
+                field = sb.ToString();
                 return field;
             }
         } = null;
@@ -266,7 +495,23 @@ namespace MedalMod
             // Check if the player actually has a leader in their colony to enable the button
             if (!ColonyHasPresenter(out _)) 
                 awardCeremonyBtn.Disable("Requires a viable presenter.");
+            
             yield return awardCeremonyBtn;
+            
+            var citationBtn = new Command_Action
+            {
+                defaultLabel = citation.NullOrEmpty() ? "Write Citation" : "Edit Citation",
+                defaultDesc = CitationLocked
+                    ? "This medal's citation has been sealed by the award ceremony."
+                    : "Write or edit the citation engraved on this medal.",
+                icon = MedalTextures.CitationIcon,
+                action = OpenCitationDialog
+            };
+
+            if (CitationLocked)
+                citationBtn.Disable("Citation is sealed after the award ceremony.");
+            
+            yield return citationBtn;
         }
 
         private bool ColonyHasPresenter(out Pawn result)
