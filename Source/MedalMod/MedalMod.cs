@@ -90,18 +90,6 @@ namespace MedalMod
             Settings.MedalScale = listing.Slider(Settings.MedalScale, 0.1f, 2.0f);
             listing.Label($"Displayed Medals: {Settings.MaxDisplayedMedals.ToStringCached()}");
             listing.IntAdjuster(ref Settings.MaxDisplayedMedals, 1);
-
-            // --- SECTION: RANKS ---
-            listing.Gap(32f);
-            Text.Font = GameFont.Medium;
-            listing.Label("Ranks");
-            Text.Font = GameFont.Small;
-            listing.Gap(6f);
-            listing.CheckboxLabeled(
-                "Ranks Ignore Outfit Policies", 
-                ref Settings.RanksIgnorePolicies, 
-                "If enabled, pawns will never automatically remove ranks when changing outfits. This allows you to force wear a rank item through clothing priorities."
-            );
             listing.End();
             base.DoSettingsWindowContents(inRect);
         }
@@ -110,7 +98,6 @@ namespace MedalMod
     public class MedalModSettings : ModSettings
     {
         // Default it to true so your intended behavior is the standard
-        public bool RanksIgnorePolicies = true;
         public bool MedalsRequireCeremony = true;
         public bool LockMedalsUponAward = true;
         public bool DrawMedalsOnPawns = true;
@@ -123,7 +110,6 @@ namespace MedalMod
         public override void ExposeData()
         {
             base.ExposeData();
-            Scribe_Values.Look(ref RanksIgnorePolicies, "RanksIgnorePolicies", true);
             Scribe_Values.Look(ref MedalsRequireCeremony, "MedalsRequireCeremony", true);
             Scribe_Values.Look(ref LockMedalsUponAward, "LockMedalsUponAward", true);
             Scribe_Values.Look(ref DrawMedalsOnPawns, "DrawMedalsOnPawns", true);
@@ -211,6 +197,8 @@ namespace MedalMod
             if (medal.Spawned) medal.DeSpawn();
             awardee.apparel.Wear(medal, false, false);
             medal.isLocked = MedalMod.Settings.LockMedalsUponAward;
+            medal.awardedBy = presenter;
+            medal.awardedTick = Find.TickManager.TicksGame;
 
             var attendees = totalPresence.Count;
             var totalColonists = jobRitual.Map.mapPawns.FreeColonistsSpawnedCount;
@@ -353,11 +341,6 @@ namespace MedalMod
         }
     }
     
-    public class RocketRank : Apparel
-    {
-        
-    }
-    
     public class Dialog_MedalAwarded : Window
     {
         private readonly RocketMedal medal;
@@ -420,6 +403,8 @@ namespace MedalMod
         public string citation;
         public int ceremonyQuality = -1; // -1 = not yet awarded
         public bool isLocked = true;
+        public Pawn awardedBy;
+        public int awardedTick = -1;
         
         public override void ExposeData()
         {
@@ -427,6 +412,7 @@ namespace MedalMod
             Scribe_Values.Look(ref citation, "citation");
             Scribe_Values.Look(ref isLocked, "isLocked", true);
             Scribe_Values.Look(ref ceremonyQuality, "ceremonyQuality", -1);
+            Scribe_References.Look(ref awardedBy, "awardedBy", true);
         }
 
         public override string GetInspectString()
@@ -708,7 +694,7 @@ namespace MedalMod
     {
         public static void Postfix(Pawn pawn, Apparel ap, ref float __result)
         {
-            if (ap is RocketMedal || (MedalMod.Settings.RanksIgnorePolicies && ap is RocketRank)) 
+            if (ap is RocketMedal) 
                 __result = -10000f;
         }
     }
@@ -886,16 +872,6 @@ namespace MedalMod
             else if (bodyType == BodyTypeDefOf.Female) bodyModifier = 0.95f;
             bodyModifier *= MedalMod.Settings.MedalScale;
             return bodyModifier;
-        }
-    }
-    
-    [HarmonyPatch(typeof(ThingFilter), nameof(ThingFilter.Allows), new[] { typeof(ThingDef) })]
-    public static class PatchRankPolicyBypass
-    {
-        public static void Postfix(ThingDef def, ref bool __result)
-        {
-            if (MedalMod.Settings.RanksIgnorePolicies && typeof(RocketRank).IsAssignableFrom(def.thingClass)) 
-                __result = true;
         }
     }
     

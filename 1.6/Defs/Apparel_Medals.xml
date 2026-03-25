@@ -340,7 +340,7 @@
 			<wornGraphicPath>Things/Medals/BronzeStar</wornGraphicPath>
 		</apparel>
 		<equippedStatOffsets>
-			<SocialImpact>0.02</SocialImpact>
+			<PainShockThreshold>0.02</PainShockThreshold>
 		</equippedStatOffsets>
 		<modExtensions>
 			<li Class="MedalMod.MedalExtension">
@@ -365,7 +365,7 @@
 			<wornGraphicPath>Things/Medals/SpaceCampaign</wornGraphicPath>
 		</apparel>
 		<equippedStatOffsets>
-			<SocialImpact>0.01</SocialImpact>
+			<VacuumResistance MayRequire="Ludeon.RimWorld.Odyssey">0.02</VacuumResistance>
 		</equippedStatOffsets>
 	</ThingDef>
 	
@@ -380,7 +380,8 @@
 			<wornGraphicPath>Things/Medals/InsectoidCampaign</wornGraphicPath>
 		</apparel>
 		<equippedStatOffsets>
-			<SocialImpact>0.01</SocialImpact>
+			<ToxicResistance>0.02</ToxicResistance>
+			<ToxicEnvironmentResistance>0.01</ToxicEnvironmentResistance>
 		</equippedStatOffsets>
 	</ThingDef>
 	
@@ -410,7 +411,7 @@
 			<wornGraphicPath>Things/Medals/SilverStar</wornGraphicPath>
 		</apparel>
 		<equippedStatOffsets>
-			<SocialImpact>0.02</SocialImpact>
+			<PainShockThreshold>0.03</PainShockThreshold>
 		</equippedStatOffsets>
 		<modExtensions>
 			<li Class="MedalMod.MedalExtension">

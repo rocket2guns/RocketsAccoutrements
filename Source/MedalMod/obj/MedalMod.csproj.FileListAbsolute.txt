@@ -17,3 +17,13 @@ C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\RocketsAccoutrements
 C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\RocketsAccoutrements\Source\MedalMod\obj\MedalMod.dll
 C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\RocketsAccoutrements\Source\MedalMod\obj\MedalMod.pdb
 C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\RocketsAccoutrements\Source\MedalMod\obj\MedalMod.sourcelink.json
+C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\RocketsMedals\Source\Assemblies\MedalMod.dll
+C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\RocketsMedals\Source\Assemblies\MedalMod.pdb
+C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\RocketsMedals\Source\MedalMod\obj\MedalMod.csproj.AssemblyReference.cache
+C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\RocketsMedals\Source\MedalMod\obj\MedalMod.GeneratedMSBuildEditorConfig.editorconfig
+C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\RocketsMedals\Source\MedalMod\obj\MedalMod.AssemblyInfoInputs.cache
+C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\RocketsMedals\Source\MedalMod\obj\MedalMod.AssemblyInfo.cs
+C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\RocketsMedals\Source\MedalMod\obj\MedalMod.csproj.CoreCompileInputs.cache
+C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\RocketsMedals\Source\MedalMod\obj\MedalMod.sourcelink.json
+C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\RocketsMedals\Source\MedalMod\obj\MedalMod.dll
+C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\RocketsMedals\Source\MedalMod\obj\MedalMod.pdb
