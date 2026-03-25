@@ -3,4 +3,5 @@
 	<ROCKET_MedalsTab>Medals</ROCKET_MedalsTab>
 	<ROCKET_NoMedals>No medals have been awarded to this colonist.</ROCKET_NoMedals>
 	<ROCKET_MedalAwardedTo>Awarded To: {0}</ROCKET_MedalAwardedTo>
+	<ROCKET_Record>Record</ROCKET_Record>
 </LanguageData>

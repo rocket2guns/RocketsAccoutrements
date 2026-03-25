@@ -1,16 +1,35 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Defs>
-	<TraitDef>
+<TraitDef>
 		<defName>ROCKET_Decorated</defName>
 		<commonality>0</commonality>
 		<degreeDatas>
 			<li>
 				<label>decorated</label>
-				<description>[PAWN_nameDef] has been recognized multiple times for exceptional service. Other colonists look up to [PAWN_objective].</description>
+				<description>[PAWN_nameDef] has been recognized for distinguished service. [PAWN_possessive] bearing reflects the quiet confidence of someone who has proven themselves under pressure.</description>
 				<degree>0</degree>
 				<statOffsets>
 					<SocialImpact>0.1</SocialImpact>
 					<MentalBreakThreshold>-0.05</MentalBreakThreshold>
+				</statOffsets>
+			</li>
+			<li>
+				<label>honored</label>
+				<description>[PAWN_nameDef] has been recognized many times for exceptional service. [PAWN_possessive] reputation precedes [PAWN_objective], and others in the colony look to [PAWN_objective] for strength in difficult times.</description>
+				<degree>1</degree>
+				<statOffsets>
+					<SocialImpact>0.2</SocialImpact>
+					<MentalBreakThreshold>-0.1</MentalBreakThreshold>
+				</statOffsets>
+			</li>
+			<li>
+				<label>exalted</label>
+				<description>[PAWN_nameDef] stands among the most celebrated figures the colony has ever known. [PAWN_possessive] name carries weight, and [PAWN_possessive] presence alone is enough to steady the nerves of those around [PAWN_objective].</description>
+				<degree>2</degree>
+				<statOffsets>
+					<SocialImpact>0.3</SocialImpact>
+					<MentalBreakThreshold>-0.15</MentalBreakThreshold>
+					<NegotiationAbility>0.02</NegotiationAbility>
 				</statOffsets>
 			</li>
 		</degreeDatas>
@@ -197,7 +216,10 @@
 	</ApparelLayerDef>
 
 	<ThingDef ParentName="ApparelMakeableBase" Name="ROCKET_MedalBase" Abstract="True">
-		<thingClass>MedalMod.RocketMedal</thingClass>
+		<thingClass>MedalMod.RocketMedal</thingClass>		
+		<inspectorTabs>
+			<li>MedalMod.ITab_MedalRecord</li>
+		</inspectorTabs>
 		<comps Inherit="False">
 			<li Class="CompProperties_Forbiddable"/>
 			<li Class="CompProperties_Biocodable"/>
@@ -254,17 +276,18 @@
 	</ThingDef>
 	
 	<ThingDef ParentName="ROCKET_MedalBase">
-		<defName>ROCKET_Medal_LongService</defName>
-		<label>long service medal</label>
-		<description>Awarded for those who have served greater than most.</description>
+		<defName>ROCKET_Medal_MedicalService</defName>
+		<label>medical service medal</label>
+		<description>Awarded for those who have distinguished themselves serving in the medical field.</description>
 		<graphicData>
-			<texPath>Things/Medals/LongService</texPath>
+			<texPath>Things/Medals/MedicalService</texPath>
 		</graphicData>
 		<apparel>
-			<wornGraphicPath>Things/Medals/LongService</wornGraphicPath>
+			<wornGraphicPath>Things/Medals/MedicalService</wornGraphicPath>
 		</apparel>
 		<equippedStatOffsets>
-			<WorkSpeedGlobal>0.02</WorkSpeedGlobal>
+			<MedicalSurgerySuccessChance>0.05</MedicalSurgerySuccessChance>
+			<MedicalTendQuality>0.08</MedicalTendQuality>
 		</equippedStatOffsets>
 	</ThingDef>
 	
@@ -282,16 +305,18 @@
 			<PainShockThreshold>0.02</PainShockThreshold>
 		</equippedStatOffsets>
 		<modExtensions>
-			<li Class="MedalMod.MedalExtension">			
+			<li Class="MedalMod.MedalExtension">
 				<removesTraits>
 					<li>
 						<trait>Delicate</trait>
+						<degree>0</degree>
 						<chance>0.1</chance>
 					</li>
 				</removesTraits>
 				<addsTraits>
 					<li>
 						<trait>Tough</trait>
+						<degree>0</degree>
 						<chance>0.1</chance>
 					</li>
 				</addsTraits>
@@ -313,15 +338,18 @@
 			<GeneralLaborSpeed>0.03</GeneralLaborSpeed>
 			<SocialImpact>0.03</SocialImpact>
 		</equippedStatOffsets>
+		<!-- Distinguished Service: unchanged, these are simple single-degree traits -->
 		<modExtensions>
 			<li Class="MedalMod.MedalExtension">
 				<addsTraits>
 					<li>
 						<trait>Greedy</trait>
+						<degree>0</degree>
 						<chance>0.1</chance>
 					</li>
 					<li>
 						<trait>Jealous</trait>
+						<degree>0</degree>
 						<chance>0.1</chance>
 					</li>
 				</addsTraits>
@@ -346,10 +374,18 @@
 			<li Class="MedalMod.MedalExtension">
 				<removesTraits>
 					<li>
-						<trait>Wimp</trait>
+						<trait>Nerves</trait>
+						<degree>-1</degree>  <!-- Volatile -->
 						<chance>0.1</chance>
 					</li>
 				</removesTraits>
+				<addsTraits>
+					<li>
+						<trait>Nerves</trait>
+						<degree>1</degree>  <!-- Steady -->
+						<chance>0.05</chance>
+					</li>
+				</addsTraits>
 			</li>
 		</modExtensions>
 	</ThingDef>
@@ -396,7 +432,8 @@
 			<wornGraphicPath>Things/Medals/PolarCampaign</wornGraphicPath>
 		</apparel>
 		<equippedStatOffsets>
-			<SocialImpact>0.01</SocialImpact>
+			<ComfyTemperatureMin>-2</ComfyTemperatureMin>
+			<CarryingCapacity>5</CarryingCapacity>
 		</equippedStatOffsets>
 	</ThingDef>
 	
@@ -417,10 +454,18 @@
 			<li Class="MedalMod.MedalExtension">
 				<removesTraits>
 					<li>
-						<trait>Wimp</trait>
-						<chance>0.3</chance>
+						<trait>Nerves</trait>
+						<degree>-1</degree>  <!-- Volatile -->
+						<chance>0.2</chance>
 					</li>
 				</removesTraits>
+				<addsTraits>
+					<li>
+						<trait>Nerves</trait>
+						<degree>1</degree>  <!-- Steady -->
+						<chance>0.1</chance>
+					</li>
+				</addsTraits>
 			</li>
 		</modExtensions>
 	</ThingDef>
@@ -439,14 +484,23 @@
 			<SocialImpact>0.1</SocialImpact>
 			<PainShockThreshold>0.05</PainShockThreshold>
 		</equippedStatOffsets>
+		<!-- Gold Cross: best chance to remove Volatile, can grant Iron-Willed -->
 		<modExtensions>
 			<li Class="MedalMod.MedalExtension">
 				<removesTraits>
 					<li>
-						<trait>Wimp</trait>
+						<trait>Nerves</trait>
+						<degree>-1</degree>  <!-- Volatile -->
 						<chance>0.5</chance>
 					</li>
 				</removesTraits>
+				<addsTraits>
+					<li>
+						<trait>Nerves</trait>
+						<degree>2</degree>  <!-- Iron-Willed -->
+						<chance>0.1</chance>
+					</li>
+				</addsTraits>
 			</li>
 		</modExtensions>
 	</ThingDef>

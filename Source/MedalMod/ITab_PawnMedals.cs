@@ -306,7 +306,7 @@ namespace MedalMod
                 if (i > 0) sb.Append(", ");
                 var val = offsets[i].value;
                 sb.Append(val >= 0 ? "+" : "");
-                sb.Append(val.ToStringPercent());
+                sb.Append(offsets[i].stat.ValueToString(val));
                 sb.Append(' ');
                 sb.Append(offsets[i].stat.LabelCap);
             }
