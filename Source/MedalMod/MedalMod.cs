@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using HarmonyLib;
@@ -17,11 +18,23 @@ namespace MedalMod
     {
         public static readonly Texture2D CitationIcon = 
             ContentFinder<Texture2D>.Get("UI/ButtonCitation");
+        
+        public static readonly Texture2D LockedIcon = ContentFinder<Texture2D>.Get("UI/Locked");
+        public static readonly Texture2D UnlockedIcon = ContentFinder<Texture2D>.Get("UI/Unlocked");
+    }
+    
+    public class MedalDynamicTrait
+    {
+        public TraitDef trait;
+        public float chance = 1.0f;
+        
+        public static implicit operator TraitDef(MedalDynamicTrait trait) => trait.trait;
     }
     
     public class MedalExtension : DefModExtension
     {
-        public List<TraitDef> removesTraits;
+        public List<MedalDynamicTrait> addsTraits;
+        public List<MedalDynamicTrait> removesTraits;
     }
     
     public class MedalMod : Mod
@@ -54,9 +67,9 @@ namespace MedalMod
                 "If enabled, medals can only be awarded to colonists via an award ceremony. If disabled, medals will be considered awarded by the first person to wear them."
             );
             listing.CheckboxLabeled(
-                "Lock Medals on Pawns", 
-                ref Settings.LockMedalsOnPawns, 
-                "If enabled, once a medal is awarded to a pawn, it cannot be removed. If disabled, medals will be removed when a pawn is stripped or drops them voluntarily. They will remain biocoded."
+                "Lock Medals upon Award", 
+                ref Settings.LockMedalsUponAward, 
+                "If enabled, once a medal is awarded to a pawn, it will default to being locked to the pawn inventory. This can be toggled individually on the dedicated tab. This setting does not affect biocoding."
             );
             listing.CheckboxLabeled(
                 "Draw Medals on Pawns", 
@@ -69,9 +82,9 @@ namespace MedalMod
                 "If enabled, a dialog will appear during award ceremonies to allow the user to enter a citation for the medal if one has not already been added to the medal. If disable a window will not appear, but citations can still be added prior to ceremony commencing."
             );
             listing.CheckboxLabeled(
-                "Gain Decorated Trait", 
-                ref Settings.GainDecoratedTrait, 
-                "If enabled, a decorated trait will be awarded to pawns who have earned 3 medals. If disabled, no trait will be awarded."
+                "Dynamic Traits", 
+                ref Settings.MedalDynamicTraits, 
+                "If enabled, medals can have a dynamic effect on traits such as gaining a decorated trait, or greedy, or losing wimp when receiving bravery awards."
             );
             listing.Label($"Worn Size: {Settings.MedalScale.ToStringPercent()}");
             Settings.MedalScale = listing.Slider(Settings.MedalScale, 0.1f, 2.0f);
@@ -99,9 +112,9 @@ namespace MedalMod
         // Default it to true so your intended behavior is the standard
         public bool RanksIgnorePolicies = true;
         public bool MedalsRequireCeremony = true;
-        public bool LockMedalsOnPawns = false;
+        public bool LockMedalsUponAward = true;
         public bool DrawMedalsOnPawns = true;
-        public bool GainDecoratedTrait = true;
+        public bool MedalDynamicTraits = true;
         public bool PromptForCitationDuringRitual = true;
         public float MedalScale = 0.8f;
         public int MaxDisplayedMedals = 9;
@@ -112,11 +125,11 @@ namespace MedalMod
             base.ExposeData();
             Scribe_Values.Look(ref RanksIgnorePolicies, "RanksIgnorePolicies", true);
             Scribe_Values.Look(ref MedalsRequireCeremony, "MedalsRequireCeremony", true);
-            Scribe_Values.Look(ref LockMedalsOnPawns, "LockMedalsOnPawns", false);
+            Scribe_Values.Look(ref LockMedalsUponAward, "LockMedalsUponAward", true);
             Scribe_Values.Look(ref DrawMedalsOnPawns, "DrawMedalsOnPawns", true);
             Scribe_Values.Look(ref MaxDisplayedMedals, "MaxDisplayedMedals", 9);
             Scribe_Values.Look(ref PromptForCitationDuringRitual, "PromptForCitationDuringRitual", true);
-            Scribe_Values.Look(ref GainDecoratedTrait, "GainDecoratedTrait", true);
+            Scribe_Values.Look(ref MedalDynamicTraits, "MedalDynamicTraits", true);
             Scribe_Values.Look(ref MedalScale, "MedalScale", 0.8f);
         }
     }
@@ -197,6 +210,7 @@ namespace MedalMod
 
             if (medal.Spawned) medal.DeSpawn();
             awardee.apparel.Wear(medal, false, false);
+            medal.isLocked = MedalMod.Settings.LockMedalsUponAward;
 
             var attendees = totalPresence.Count;
             var totalColonists = jobRitual.Map.mapPawns.FreeColonistsSpawnedCount;
@@ -217,7 +231,7 @@ namespace MedalMod
                 }
             }
 
-            if (MedalMod.Settings.GainDecoratedTrait)
+            if (MedalMod.Settings.MedalDynamicTraits)
             {
                 var medalCount = awardee.apparel.WornApparel.Count(a => a is RocketMedal);
                 var decoratedDef = DefDatabase<TraitDef>.GetNamedSilentFail("ROCKET_Decorated");
@@ -233,22 +247,37 @@ namespace MedalMod
                         MessageTypeDefOf.PositiveEvent
                     );
                 } 
-            }
-            
-            var ext = medal.def.GetModExtension<MedalExtension>();
-            if (ext?.removesTraits != null)
-            {
-                foreach (var traitDef in ext.removesTraits)
+                var ext = medal.def.GetModExtension<MedalExtension>();
+                if (ext?.removesTraits is not null)
                 {
-                    var existing = awardee.story.traits.GetTrait(traitDef);
-                    if (existing == null) continue;
-        
-                    awardee.story.traits.RemoveTrait(existing);
-                    Messages.Message(
-                        $"{awardee.NameShortColored} has overcome the {traitDef.degreeDatas[0].label} trait through distinguished service.",
-                        awardee,
-                        MessageTypeDefOf.PositiveEvent
-                    );
+                    foreach (var traitDef in ext.removesTraits)
+                    {
+                        var existing = awardee.story.traits.GetTrait(traitDef);
+                        if (existing is null) continue;
+                        if (!Rand.Chance(traitDef.chance)) continue;
+                        awardee.story.traits.RemoveTrait(existing);
+                        Messages.Message(
+                            $"{awardee.NameShortColored} has overcome the {traitDef.trait.degreeDatas[0].label} trait through distinguished service.",
+                            awardee,
+                            MessageTypeDefOf.PositiveEvent
+                        );
+                    }
+                }
+                if (ext?.addsTraits is not null)
+                {
+                    foreach (var traitDef in ext.addsTraits)
+                    {
+                        var existing = awardee.story.traits.GetTrait(traitDef);
+                        if (existing is null) continue;
+                        if (awardee.story.traits.allTraits.Any(t => traitDef.trait.ConflictsWith(t))) continue;
+                        if (!Rand.Chance(traitDef.chance)) continue;
+                        awardee.story.traits.GainTrait(new(traitDef, 0));
+                        Messages.Message(
+                            $"{awardee.NameShortColored} has gained the {traitDef.trait.degreeDatas[0].label} trait through distinguished service.",
+                            awardee,
+                            MessageTypeDefOf.PositiveEvent
+                        );
+                    }
                 }
             }
 
@@ -390,13 +419,13 @@ namespace MedalMod
         
         public string citation;
         public int ceremonyQuality = -1; // -1 = not yet awarded
-        
-        public bool CitationLocked => BiocodeComp is { Biocoded: true };
+        public bool isLocked = true;
         
         public override void ExposeData()
         {
             base.ExposeData();
             Scribe_Values.Look(ref citation, "citation");
+            Scribe_Values.Look(ref isLocked, "isLocked", true);
             Scribe_Values.Look(ref ceremonyQuality, "ceremonyQuality", -1);
         }
 
@@ -415,7 +444,6 @@ namespace MedalMod
 
         private void OpenCitationDialog()
         {
-            if (CitationLocked) return;
             Find.WindowStack.Add(new Dialog_WriteCitation(this));
         }
 
@@ -475,15 +503,10 @@ namespace MedalMod
             var citationBtn = new Command_Action
             {
                 defaultLabel = citation.NullOrEmpty() ? "Write Citation" : "Edit Citation",
-                defaultDesc = CitationLocked
-                    ? "This medal's citation has been sealed by the award ceremony."
-                    : "Write or edit the citation engraved on this medal.",
+                defaultDesc = "Write or edit the citation engraved on this medal.",
                 icon = MedalTextures.CitationIcon,
                 action = OpenCitationDialog
             };
-
-            if (CitationLocked)
-                citationBtn.Disable("Citation is sealed after the award ceremony.");
             
             yield return citationBtn;
         }
@@ -502,6 +525,15 @@ namespace MedalMod
                 }
             }
             return false;
+        }
+        
+        public string MedalLabel
+        {
+            get
+            {
+                var cleanLabel = GenLabel.ThingLabel(this.def, this.Stuff, 1);
+                return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(cleanLabel);
+            }
         }
 
         private void StartMedalRitual()
@@ -524,7 +556,7 @@ namespace MedalMod
             var fakeRitual = (Precept_Ritual)PreceptMaker.MakePrecept(dummyPreceptDef);
             fakeRitual.ideo = presenter.Ideo;
             fakeRitual.sourcePattern = pattern;
-            var nameValue = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(LabelShort);
+            var nameValue = MedalLabel;
             var ceremonyName = $"{nameValue} Award Ceremony";
             fakeRitual.SetName("Award Ceremony");
             
@@ -604,8 +636,70 @@ namespace MedalMod
     {
         public static void Postfix(Apparel __0, ref bool __result)
         {
-            if (__0 is not RocketMedal || !MedalMod.Settings.LockMedalsOnPawns) return;
-            __result = true;
+            if (__0 is RocketMedal medal)
+                __result = medal.isLocked;
+        }
+    }
+    
+    [HarmonyPatch(typeof(Corpse), nameof(Corpse.Strip))]
+    public static class PatchCorpseStripMedals
+    {
+        public static void Prefix(Corpse __instance, out List<RocketMedal> __state)
+        {
+            __state = null;
+            var pawn = __instance.InnerPawn;
+            if (pawn?.apparel == null) return;
+
+            __state = pawn.apparel.WornApparel
+                .OfType<RocketMedal>()
+                .Where(m => m.isLocked)
+                .ToList();
+        }
+
+        public static void Postfix(Corpse __instance, List<RocketMedal> __state)
+        {
+            if (__state == null || __state.Count == 0) return;
+            var pawn = __instance.InnerPawn;
+            if (pawn?.apparel == null) return;
+
+            foreach (var medal in __state)
+            {
+                if (medal.Destroyed) continue;
+                if (pawn.apparel.WornApparel.Contains(medal)) continue;
+
+                if (medal.Spawned) medal.DeSpawn();
+                pawn.apparel.Wear(medal, false, true);
+            }
+        }
+    }
+    
+    [HarmonyPatch(typeof(Pawn), nameof(Pawn.Strip))]
+    public static class PatchPawnStripMedals
+    {
+        public static void Prefix(Pawn __instance, out List<RocketMedal> __state)
+        {
+            __state = null;
+            if (__instance.apparel == null) return;
+
+            __state = __instance.apparel.WornApparel
+                .OfType<RocketMedal>()
+                .Where(m => m.isLocked)
+                .ToList();
+        }
+
+        public static void Postfix(Pawn __instance, List<RocketMedal> __state)
+        {
+            if (__state == null || __state.Count == 0) return;
+            if (__instance.apparel == null) return;
+
+            foreach (var medal in __state)
+            {
+                if (medal.Destroyed) continue;
+                if (__instance.apparel.WornApparel.Contains(medal)) continue;
+
+                if (medal.Spawned) medal.DeSpawn();
+                __instance.apparel.Wear(medal, false, true);
+            }
         }
     }
     
@@ -678,6 +772,12 @@ namespace MedalMod
         {
             new Harmony("com.rocket.medalmod").PatchAll();
             Log.Message("[MedalMod] Harmony patches applied successfully.");
+            
+            foreach (var tex in Resources.FindObjectsOfTypeAll<Texture2D>())
+            {
+                if (tex.name.ToLower().Contains("lock"))
+                    Log.Message($"[MedalMod] Found texture: {tex.name}");
+            }
         }
     }
     

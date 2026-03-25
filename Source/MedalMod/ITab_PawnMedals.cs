@@ -84,13 +84,11 @@ namespace MedalMod
             var medals = GetMedals(pawn);
             var outerRect = new Rect(0f, 0f, size.x, size.y).ContractedBy(PADDING);
 
-            // --- Header ---
             var headerRect = new Rect(outerRect.x, outerRect.y, outerRect.width, 30f);
             Text.Font = GameFont.Medium;
             Widgets.Label(headerRect, "ROCKET_MedalsTab".Translate());
             Text.Font = GameFont.Small;
 
-            // --- No medals state ---
             if (medals.Count == 0)
             {
                 var emptyRect = new Rect(outerRect.x, headerRect.yMax + PADDING, outerRect.width, 40f);
@@ -100,60 +98,100 @@ namespace MedalMod
                 return;
             }
 
-            // --- Scrollable medal list ---
             var listRect = new Rect(outerRect.x, headerRect.yMax + PADDING, outerRect.width, outerRect.height - 30f - PADDING);
+            var viewWidth = listRect.width - 16f; // scrollbar
+
             var totalHeight = 0f;
             foreach (var medal in medals)
-                totalHeight += GetRowHeight(medal) + PADDING;
-            var viewRect = new Rect(0f, 0f, listRect.width - 16f, totalHeight);
+                totalHeight += GetRowHeight(medal, viewWidth) + PADDING;
+            var viewRect = new Rect(0f, 0f, viewWidth, totalHeight);
 
             Widgets.BeginScrollView(listRect, ref _scrollPosition, viewRect);
 
             var curY = 0f;
-            foreach (var medal in medals) 
-                DrawMedalRow(viewRect.width, ref curY, medal);
+            foreach (var medal in medals)
+                DrawMedalRow(viewWidth, ref curY, medal);
 
             Widgets.EndScrollView();
         }
 
-        private float GetRowHeight(RocketMedal medal)
+        private float GetRowHeight(RocketMedal medal, float width)
         {
-            if (medal.citation.NullOrEmpty()) return MEDAL_ROW_HEIGHT;
-            
-            // Citation can be longer, so calculate the wrapped text height
-            Text.Font = GameFont.Tiny;
-            var textWidth = size.x - (PADDING * 4) - ICON_SIZE - 16f;
-            var citationHeight = Text.CalcHeight($"\"{medal.citation}\"", textWidth);
+            var textWidth = GetTextWidth(width);
+            var height = 4f;
+
             Text.Font = GameFont.Small;
-            
-            // name(24) + gap(2) + citation + gap(2) + stats(20) + padding(8)
-            var contentHeight = 24f + 2f + citationHeight + 2f + 20f + 8f;
-            return Mathf.Max(MEDAL_ROW_HEIGHT, contentHeight);
+            height += Text.CalcHeight(medal.MedalLabel, textWidth) + 2f;
+
+            Text.Font = GameFont.Tiny;
+            if (!medal.citation.NullOrEmpty())
+            {
+                height += Text.CalcHeight($"\"{medal.citation}\"", textWidth) + 2f;
+            }
+            else
+            {
+                height += 20f + 2f;
+            }
+
+            var statText = GetStatSummary(medal);
+            if (!statText.NullOrEmpty())
+            {
+                height += Text.CalcHeight(statText, textWidth);
+            }
+
+            Text.Font = GameFont.Small;
+            height += 8f;
+            return Mathf.Max(MEDAL_ROW_HEIGHT, height);
         }
+        
+        private float GetTextWidth(float availableWidth)
+        {
+            return availableWidth - ICON_SIZE - (PADDING * 3) - LOCK_BTN_SIZE - PADDING;
+        }
+
+        private const float LOCK_BTN_SIZE = 24f;
 
         private void DrawMedalRow(float width, ref float curY, RocketMedal medal)
         {
-            var rowHeight = GetRowHeight(medal);
+            var rowHeight = GetRowHeight(medal, width);
             var rowRect = new Rect(0f, curY, width, rowHeight);
 
             if (Mouse.IsOver(rowRect))
                 Widgets.DrawHighlight(rowRect);
 
-            // --- Icon ---
+            // Lock toggle
+            var lockRect = new Rect(
+                rowRect.xMax - LOCK_BTN_SIZE - PADDING,
+                rowRect.y + 4f,
+                LOCK_BTN_SIZE,
+                LOCK_BTN_SIZE
+            );
+            var lockIcon = medal.isLocked ?  MedalTextures.LockedIcon : MedalTextures.UnlockedIcon;
+            var lockTip = medal.isLocked
+                ? "This medal is locked and cannot be removed from the pawn. Click to unlock."
+                : "This medal is unlocked and can be removed from the pawn. Click to lock.";
+
+            GUI.color = Color.gray;
+            if (Widgets.ButtonImage(lockRect, lockIcon, GUI.color))
+                medal.isLocked = !medal.isLocked;
+            GUI.color = Color.white;
+            TooltipHandler.TipRegion(lockRect, lockTip);
+
+            // Icon
             var iconRect = new Rect(rowRect.x + PADDING, rowRect.y + (rowHeight - ICON_SIZE) / 2f, ICON_SIZE, ICON_SIZE);
             Widgets.ThingIcon(iconRect, medal);
 
-            // --- Text area to the right of the icon ---
             var textX = iconRect.xMax + PADDING;
-            var textWidth = width - textX - PADDING;
+            var textWidth = GetTextWidth(width);
 
             // Medal name
-            var nameRect = new Rect(textX, rowRect.y + 4f, textWidth, 24f);
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
-            Widgets.Label(nameRect, medal.LabelCap);
+            var nameHeight = Text.CalcHeight(medal.MedalLabel, textWidth);
+            var nameRect = new Rect(textX, rowRect.y + 4f, textWidth, nameHeight);
+            Widgets.Label(nameRect, medal.MedalLabel);
 
-            // Citation (yellow) OR description (grey)
+            // Citation
             Text.Font = GameFont.Tiny;
             float descBottom;
             if (!medal.citation.NullOrEmpty())
@@ -176,24 +214,24 @@ namespace MedalMod
             }
 
             // Stat bonuses summary
-            var statsRect = new Rect(textX, descBottom + 2f, textWidth, 20f);
             var statText = GetStatSummary(medal);
             if (!statText.NullOrEmpty())
             {
+                Text.Font = GameFont.Tiny;
+                var statHeight = Text.CalcHeight(statText, textWidth);
+                var statsRect = new Rect(textX, descBottom + 2f, textWidth, statHeight);
                 GUI.color = new Color(0.5f, 0.8f, 0.5f);
                 Widgets.Label(statsRect, statText);
                 GUI.color = Color.white;
             }
-
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.UpperLeft;
 
-            // Tooltip always shows BOTH description and citation. might be confusing
-            // TODO: make tooltip show only one of them?
-            if (Mouse.IsOver(rowRect))
+            // Tooltip on hover
+            if (Mouse.IsOver(rowRect) && !Mouse.IsOver(lockRect))
             {
                 var sb = new StringBuilder();
-                sb.Append(medal.LabelCap);
+                sb.Append(medal.MedalLabel);
                 sb.AppendLine();
                 sb.AppendLine();
                 sb.Append(medal.def.description);

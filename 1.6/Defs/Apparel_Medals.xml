@@ -281,6 +281,22 @@
 		<equippedStatOffsets>
 			<PainShockThreshold>0.02</PainShockThreshold>
 		</equippedStatOffsets>
+		<modExtensions>
+			<li Class="MedalMod.MedalExtension">			
+				<removesTraits>
+					<li>
+						<trait>Delicate</trait>
+						<chance>0.1</chance>
+					</li>
+				</removesTraits>
+				<addsTraits>
+					<li>
+						<trait>Tough</trait>
+						<chance>0.1</chance>
+					</li>
+				</addsTraits>
+			</li>
+		</modExtensions>
 	</ThingDef>
 	
 	<ThingDef ParentName="ROCKET_MedalBase">
@@ -297,6 +313,20 @@
 			<GeneralLaborSpeed>0.03</GeneralLaborSpeed>
 			<SocialImpact>0.03</SocialImpact>
 		</equippedStatOffsets>
+		<modExtensions>
+			<li Class="MedalMod.MedalExtension">
+				<addsTraits>
+					<li>
+						<trait>Greedy</trait>
+						<chance>0.1</chance>
+					</li>
+					<li>
+						<trait>Jealous</trait>
+						<chance>0.1</chance>
+					</li>
+				</addsTraits>
+			</li>
+		</modExtensions>
 	</ThingDef>
 	
 	<ThingDef ParentName="ROCKET_MedalBase">
@@ -312,6 +342,16 @@
 		<equippedStatOffsets>
 			<SocialImpact>0.02</SocialImpact>
 		</equippedStatOffsets>
+		<modExtensions>
+			<li Class="MedalMod.MedalExtension">
+				<removesTraits>
+					<li>
+						<trait>Wimp</trait>
+						<chance>0.1</chance>
+					</li>
+				</removesTraits>
+			</li>
+		</modExtensions>
 	</ThingDef>
 	
 	<ThingDef ParentName="ROCKET_MedalBase">
@@ -372,6 +412,16 @@
 		<equippedStatOffsets>
 			<SocialImpact>0.02</SocialImpact>
 		</equippedStatOffsets>
+		<modExtensions>
+			<li Class="MedalMod.MedalExtension">
+				<removesTraits>
+					<li>
+						<trait>Wimp</trait>
+						<chance>0.3</chance>
+					</li>
+				</removesTraits>
+			</li>
+		</modExtensions>
 	</ThingDef>
 	
 	<ThingDef ParentName="ROCKET_MedalBase">
@@ -391,7 +441,10 @@
 		<modExtensions>
 			<li Class="MedalMod.MedalExtension">
 				<removesTraits>
-					<li>Wimp</li>
+					<li>
+						<trait>Wimp</trait>
+						<chance>0.5</chance>
+					</li>
 				</removesTraits>
 			</li>
 		</modExtensions>

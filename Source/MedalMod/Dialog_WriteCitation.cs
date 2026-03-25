@@ -7,9 +7,9 @@ public class Dialog_WriteCitation : Window
 {
     private readonly RocketMedal medal;
     private string draft;
-    private const int MaxLength = 300;
-    private const float MedalColumnWidth = 160f;
-    private const float IconSize = 128f;
+    private const int MAX_LENGTH = 300;
+    private const float MEDAL_COLUMN_WIDTH = 160f;
+    private const float ICON_SIZE = 160f;
 
     public Dialog_WriteCitation(RocketMedal medal)
     {
@@ -26,8 +26,7 @@ public class Dialog_WriteCitation : Window
 
     public override void DoWindowContents(Rect inRect)
     {
-        // === Left column: Medal display ===
-        var medalCol = new Rect(inRect.x, inRect.y, MedalColumnWidth, inRect.height - 45f);
+        var medalCol = new Rect(inRect.x, inRect.y, MEDAL_COLUMN_WIDTH, inRect.height - 45f);
         DrawMedalColumn(medalCol);
 
         // Vertical separator
@@ -36,16 +35,15 @@ public class Dialog_WriteCitation : Window
         Widgets.DrawLineVertical(separatorX, inRect.y, inRect.height - 45f);
         GUI.color = Color.white;
 
-        // === Right column: Citation writing ===
-        var writeCol = new Rect(separatorX + 10f, inRect.y, inRect.width - MedalColumnWidth - 30f, inRect.height);
+        var writeCol = new Rect(separatorX + 10f, inRect.y, inRect.width - MEDAL_COLUMN_WIDTH - 30f, inRect.height);
         DrawWritingColumn(writeCol);
     }
 
     private void DrawMedalColumn(Rect rect)
     {
-        // Medal icon — large, centered
-        var iconX = rect.x + (rect.width - IconSize) / 2f;
-        var iconRect = new Rect(iconX, rect.y + 10f, IconSize, IconSize);
+        // Medal icon
+        var iconX = rect.x + (rect.width - ICON_SIZE) / 2f;
+        var iconRect = new Rect(iconX, rect.y + 10f, ICON_SIZE, ICON_SIZE);
         Widgets.ThingIcon(iconRect, medal);
 
         // Medal name
@@ -55,7 +53,7 @@ public class Dialog_WriteCitation : Window
         var nameRect = new Rect(rect.x, iconRect.yMax + 10f, rect.width, nameHeight);
         Widgets.Label(nameRect, medal.LabelCap);
 
-        // Medal description — wrapped
+        // Medal description
         Text.Font = GameFont.Tiny;
         var desc = medal.def.description ?? "";
         var descHeight = Text.CalcHeight(desc, rect.width - 10f);
@@ -104,16 +102,16 @@ public class Dialog_WriteCitation : Window
         Text.Font = GameFont.Small;
         var textRect = new Rect(rect.x, instrRect.yMax + 8f, rect.width, 150f);
         draft = Widgets.TextArea(textRect, draft);
-        if (draft.Length > MaxLength)
-            draft = draft.Substring(0, MaxLength);
+        if (draft.Length > MAX_LENGTH)
+            draft = draft.Substring(0, MAX_LENGTH);
 
         // Character count
-        var countColor = draft.Length > MaxLength - 30 ? Color.yellow : Color.gray;
+        var countColor = draft.Length > MAX_LENGTH - 30 ? Color.yellow : Color.gray;
         GUI.color = countColor;
         Text.Font = GameFont.Tiny;
         var countRect = new Rect(rect.x, textRect.yMax + 4f, rect.width, 20f);
         Text.Anchor = TextAnchor.UpperRight;
-        Widgets.Label(countRect, $"{draft.Length} / {MaxLength}");
+        Widgets.Label(countRect, $"{draft.Length} / {MAX_LENGTH}");
         Text.Anchor = TextAnchor.UpperLeft;
         GUI.color = Color.white;
 
