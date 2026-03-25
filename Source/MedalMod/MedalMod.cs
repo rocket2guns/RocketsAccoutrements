@@ -19,6 +19,11 @@ namespace MedalMod
             ContentFinder<Texture2D>.Get("UI/ButtonCitation");
     }
     
+    public class MedalExtension : DefModExtension
+    {
+        public List<TraitDef> removesTraits;
+    }
+    
     public class MedalMod : Mod
     {
         public static MedalModSettings Settings;
@@ -63,9 +68,14 @@ namespace MedalMod
                 ref Settings.PromptForCitationDuringRitual, 
                 "If enabled, a dialog will appear during award ceremonies to allow the user to enter a citation for the medal if one has not already been added to the medal. If disable a window will not appear, but citations can still be added prior to ceremony commencing."
             );
+            listing.CheckboxLabeled(
+                "Gain Decorated Trait", 
+                ref Settings.GainDecoratedTrait, 
+                "If enabled, a decorated trait will be awarded to pawns who have earned 3 medals. If disabled, no trait will be awarded."
+            );
             listing.Label($"Worn Size: {Settings.MedalScale.ToStringPercent()}");
             Settings.MedalScale = listing.Slider(Settings.MedalScale, 0.1f, 2.0f);
-            listing.Label($"Maximum Rows: {Settings.MaxDisplayedMedals.ToStringCached()}");
+            listing.Label($"Displayed Medals: {Settings.MaxDisplayedMedals.ToStringCached()}");
             listing.IntAdjuster(ref Settings.MaxDisplayedMedals, 1);
 
             // --- SECTION: RANKS ---
@@ -91,6 +101,7 @@ namespace MedalMod
         public bool MedalsRequireCeremony = true;
         public bool LockMedalsOnPawns = false;
         public bool DrawMedalsOnPawns = true;
+        public bool GainDecoratedTrait = true;
         public bool PromptForCitationDuringRitual = true;
         public float MedalScale = 0.8f;
         public int MaxDisplayedMedals = 9;
@@ -105,6 +116,7 @@ namespace MedalMod
             Scribe_Values.Look(ref DrawMedalsOnPawns, "DrawMedalsOnPawns", true);
             Scribe_Values.Look(ref MaxDisplayedMedals, "MaxDisplayedMedals", 9);
             Scribe_Values.Look(ref PromptForCitationDuringRitual, "PromptForCitationDuringRitual", true);
+            Scribe_Values.Look(ref GainDecoratedTrait, "GainDecoratedTrait", true);
             Scribe_Values.Look(ref MedalScale, "MedalScale", 0.8f);
         }
     }
@@ -183,9 +195,6 @@ namespace MedalMod
             var presenter = jobRitual.assignments.FirstAssignedPawn("leader");
             if (awardee == null || presenter == null) return;
 
-            if (medal.citation.NullOrEmpty())
-                Find.WindowStack.Add(new Dialog_WriteCitation(medal));
-
             if (medal.Spawned) medal.DeSpawn();
             awardee.apparel.Wear(medal, false, false);
 
@@ -205,6 +214,41 @@ namespace MedalMod
                 {
                     if (pawn == awardee) continue;
                     pawn.needs?.mood?.thoughts.memories.TryGainMemory(spectatorThought);
+                }
+            }
+
+            if (MedalMod.Settings.GainDecoratedTrait)
+            {
+                var medalCount = awardee.apparel.WornApparel.Count(a => a is RocketMedal);
+                var decoratedDef = DefDatabase<TraitDef>.GetNamedSilentFail("ROCKET_Decorated");
+
+                if (decoratedDef != null 
+                    && medalCount >= 3 
+                    && !awardee.story.traits.HasTrait(decoratedDef))
+                {
+                    awardee.story.traits.GainTrait(new Trait(decoratedDef, 0));
+                    Messages.Message(
+                        $"{awardee.NameShortColored} is now considered Decorated.",
+                        awardee,
+                        MessageTypeDefOf.PositiveEvent
+                    );
+                } 
+            }
+            
+            var ext = medal.def.GetModExtension<MedalExtension>();
+            if (ext?.removesTraits != null)
+            {
+                foreach (var traitDef in ext.removesTraits)
+                {
+                    var existing = awardee.story.traits.GetTrait(traitDef);
+                    if (existing == null) continue;
+        
+                    awardee.story.traits.RemoveTrait(existing);
+                    Messages.Message(
+                        $"{awardee.NameShortColored} has overcome the {traitDef.degreeDatas[0].label} trait through distinguished service.",
+                        awardee,
+                        MessageTypeDefOf.PositiveEvent
+                    );
                 }
             }
 
@@ -338,77 +382,7 @@ namespace MedalMod
                 Close();
         }
     }
-    
-    public class Dialog_WriteCitation : Window
-    {
-        private readonly RocketMedal medal;
-        private string draft;
-        private const int MaxLength = 300;
 
-        public Dialog_WriteCitation(RocketMedal medal)
-        {
-            this.medal = medal;
-            this.draft = medal.citation ?? "";
-            
-            forcePause = true;
-            doCloseX = true;
-            absorbInputAroundWindow = true;
-            closeOnClickedOutside = false;
-        }
-
-        public override Vector2 InitialSize => new(500f, 350f);
-
-        public override void DoWindowContents(Rect inRect)
-        {
-            var listing = new Listing_Standard();
-            listing.Begin(inRect);
-
-            // Header
-            Text.Font = GameFont.Medium;
-            listing.Label(medal.LabelCap);
-            Text.Font = GameFont.Small;
-            listing.Gap(4f);
-
-            // Instruction
-            GUI.color = Color.gray;
-            listing.Label("Write the citation to be engraved on this medal. This will be permanently sealed once the medal is awarded.");
-            GUI.color = Color.white;
-            listing.Gap(8f);
-
-            // Text area
-            var textRect = listing.GetRect(150f);
-            draft = Widgets.TextArea(textRect, draft);
-            if (draft.Length > MaxLength)
-                draft = draft.Substring(0, MaxLength);
-
-            // Character count
-            listing.Gap(4f);
-            var countColor = draft.Length > MaxLength - 30 ? Color.yellow : Color.gray;
-            GUI.color = countColor;
-            listing.Label($"{draft.Length} / {MaxLength}");
-            GUI.color = Color.white;
-
-            listing.Gap(12f);
-
-            // Buttons
-            var buttonRect = listing.GetRect(35f);
-            var halfWidth = (buttonRect.width - 10f) / 2f;
-
-            // Save
-            if (Widgets.ButtonText(new Rect(buttonRect.x, buttonRect.y, halfWidth, 35f), "Confirm"))
-            {
-                medal.citation = draft.NullOrEmpty() ? null : draft.Trim();
-                Close();
-            }
-
-            // Clear
-            if (Widgets.ButtonText(new Rect(buttonRect.x + halfWidth + 10f, buttonRect.y, halfWidth, 35f), "Clear"))
-                draft = "";
-
-            listing.End();
-        }
-    }
-    
     public class RocketMedal : Apparel
     {
         public CompBiocodable BiocodeComp => field ??= this.GetComp<CompBiocodable>();

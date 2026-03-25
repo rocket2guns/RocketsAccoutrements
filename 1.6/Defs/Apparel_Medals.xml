@@ -1,5 +1,21 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Defs>
+	<TraitDef>
+		<defName>ROCKET_Decorated</defName>
+		<commonality>0</commonality>
+		<degreeDatas>
+			<li>
+				<label>decorated</label>
+				<description>[PAWN_nameDef] has been recognized multiple times for exceptional service. Other colonists look up to [PAWN_objective].</description>
+				<degree>0</degree>
+				<statOffsets>
+					<SocialImpact>0.1</SocialImpact>
+					<MentalBreakThreshold>-0.05</MentalBreakThreshold>
+				</statOffsets>
+			</li>
+		</degreeDatas>
+	</TraitDef>
+
 	<RitualOutcomeEffectDef>
 		<defName>ROCKET_AwardMedalOutcome</defName>
 		<description>The medal is awarded to the colonist.</description>
@@ -372,5 +388,12 @@
 			<SocialImpact>0.1</SocialImpact>
 			<PainShockThreshold>0.05</PainShockThreshold>
 		</equippedStatOffsets>
+		<modExtensions>
+			<li Class="MedalMod.MedalExtension">
+				<removesTraits>
+					<li>Wimp</li>
+				</removesTraits>
+			</li>
+		</modExtensions>
 	</ThingDef>
 </Defs>
