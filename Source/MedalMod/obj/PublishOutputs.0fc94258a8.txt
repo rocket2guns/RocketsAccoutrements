@@ -1,2 +1,0 @@
-C:\MedalMod\bin\net472\publish\MedalMod.dll
-C:\MedalMod\bin\net472\publish\MedalMod.pdb

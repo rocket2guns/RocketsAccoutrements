@@ -1,0 +1,15 @@
+# Build output
+Source/**/bin/
+Source/**/obj/
+
+# IDE / Rider / Visual Studio
+*.user
+*.suo
+*.DotSettings.user
+.idea/
+.vs/
+
+# NuGet
+*.nupkg
+packages/
+
