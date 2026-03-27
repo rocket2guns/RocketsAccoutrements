@@ -71,7 +71,7 @@ public class Dialog_WriteCitation : Window
             foreach (var mod in offsets)
             {
                 var sign = mod.value >= 0 ? "+" : "";
-                var line = $"{sign}{mod.value.ToStringPercent()} {mod.stat.LabelCap}";
+                var line = $"{sign}{mod.stat.ValueToString(mod.value)} {mod.stat.LabelCap}";
                 var lineRect = new Rect(rect.x + 5f, statsY, rect.width - 10f, 18f);
                 Widgets.Label(lineRect, line);
                 statsY += 18f;

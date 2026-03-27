@@ -2,7 +2,6 @@
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using HarmonyLib;
 using RimWorld;
 using Verse;
@@ -23,14 +22,27 @@ namespace MedalMod
         public static readonly Texture2D UnlockedIcon = ContentFinder<Texture2D>.Get("UI/Unlocked");
     }
     
+
     public class MedalDynamicTrait
     {
         public TraitDef trait;
+        public int degree = 0;
         public float chance = 1.0f;
-        
-        public static implicit operator TraitDef(MedalDynamicTrait trait) => trait.trait;
+
+        /// <summary>
+        /// Readable label for messages, pulling from the specific degree data.
+        /// Falls back to the def's label if the degree isn't found.
+        /// </summary>
+        public string Label
+        {
+            get
+            {
+                var data = trait?.DataAtDegree(degree);
+                return data?.label ?? trait?.defName ?? "unknown";
+            }
+        }
     }
-    
+
     public class MedalExtension : DefModExtension
     {
         public List<MedalDynamicTrait> addsTraits;
@@ -47,22 +59,17 @@ namespace MedalMod
             Settings = GetSettings<MedalModSettings>();
         }
 
-        public override string SettingsCategory() => "Rocket's Accoutrements";
+        public override string SettingsCategory() => "Rocket's Medals";
 
         // Draws the actual menu
         public override void DoSettingsWindowContents(Rect inRect)
         {
             Listing_Standard listing = new Listing_Standard();
             listing.Begin(inRect);
-
-            // --- SECTION: MEDALS ---
-            listing.Gap(32f);
-            Text.Font = GameFont.Medium;
-            listing.Label("Medals");
             Text.Font = GameFont.Small;
             listing.Gap(6f);
             listing.CheckboxLabeled(
-                "Medals Require Ceremony",  
+                "Require Ceremony",  
                 ref Settings.MedalsRequireCeremony, 
                 "If enabled, medals can only be awarded to colonists via an award ceremony. If disabled, medals will be considered awarded by the first person to wear them."
             );
@@ -77,7 +84,7 @@ namespace MedalMod
                 "If enabled, medals will be rendered on pawns. Disabling this will stop medals being drawn on pawns. Use this to turn their rendering off."
             );
             listing.CheckboxLabeled(
-                "Prompt for Citation during Ritual", 
+                "Prompt for Citation during Ceremony", 
                 ref Settings.PromptForCitationDuringRitual, 
                 "If enabled, a dialog will appear during award ceremonies to allow the user to enter a citation for the medal if one has not already been added to the medal. If disable a window will not appear, but citations can still be added prior to ceremony commencing."
             );
@@ -90,18 +97,6 @@ namespace MedalMod
             Settings.MedalScale = listing.Slider(Settings.MedalScale, 0.1f, 2.0f);
             listing.Label($"Displayed Medals: {Settings.MaxDisplayedMedals.ToStringCached()}");
             listing.IntAdjuster(ref Settings.MaxDisplayedMedals, 1);
-
-            // --- SECTION: RANKS ---
-            listing.Gap(32f);
-            Text.Font = GameFont.Medium;
-            listing.Label("Ranks");
-            Text.Font = GameFont.Small;
-            listing.Gap(6f);
-            listing.CheckboxLabeled(
-                "Ranks Ignore Outfit Policies", 
-                ref Settings.RanksIgnorePolicies, 
-                "If enabled, pawns will never automatically remove ranks when changing outfits. This allows you to force wear a rank item through clothing priorities."
-            );
             listing.End();
             base.DoSettingsWindowContents(inRect);
         }
@@ -110,7 +105,6 @@ namespace MedalMod
     public class MedalModSettings : ModSettings
     {
         // Default it to true so your intended behavior is the standard
-        public bool RanksIgnorePolicies = true;
         public bool MedalsRequireCeremony = true;
         public bool LockMedalsUponAward = true;
         public bool DrawMedalsOnPawns = true;
@@ -123,7 +117,6 @@ namespace MedalMod
         public override void ExposeData()
         {
             base.ExposeData();
-            Scribe_Values.Look(ref RanksIgnorePolicies, "RanksIgnorePolicies", true);
             Scribe_Values.Look(ref MedalsRequireCeremony, "MedalsRequireCeremony", true);
             Scribe_Values.Look(ref LockMedalsUponAward, "LockMedalsUponAward", true);
             Scribe_Values.Look(ref DrawMedalsOnPawns, "DrawMedalsOnPawns", true);
@@ -201,6 +194,10 @@ namespace MedalMod
             if (this.def is { comps: null }) this.def.comps = new();
         }
 
+        private const int MEDALS_DECORATED = 3;
+        private const int MEDALS_HONORED = 5;
+        private const int MEDALS_EXHALTED = 7;
+
         public override void Apply(float progress, Dictionary<Pawn, int> totalPresence, LordJob_Ritual jobRitual)
         {
             if (jobRitual.selectedTarget.Thing is not RocketMedal medal) return;
@@ -211,10 +208,13 @@ namespace MedalMod
             if (medal.Spawned) medal.DeSpawn();
             awardee.apparel.Wear(medal, false, false);
             medal.isLocked = MedalMod.Settings.LockMedalsUponAward;
+            medal.awardedBy = presenter;
+            medal.awardedTick = Find.TickManager.TicksGame;
 
             var attendees = totalPresence.Count;
             var totalColonists = jobRitual.Map.mapPawns.FreeColonistsSpawnedCount;
             var stageIndex = CeremonyQuality.GetStageIndex(attendees, totalColonists);
+            medal.ceremonyQuality = stageIndex;
             var qualityLabel = CeremonyQuality.GetQualityLabel(stageIndex);
 
             var awardedThought = DefDatabase<ThoughtDef>.GetNamed("ROCKET_AwardedMedal_Thought", false);
@@ -235,45 +235,86 @@ namespace MedalMod
             {
                 var medalCount = awardee.apparel.WornApparel.Count(a => a is RocketMedal);
                 var decoratedDef = DefDatabase<TraitDef>.GetNamedSilentFail("ROCKET_Decorated");
-
-                if (decoratedDef != null 
-                    && medalCount >= 3 
-                    && !awardee.story.traits.HasTrait(decoratedDef))
+                if (decoratedDef is not null)
                 {
-                    awardee.story.traits.GainTrait(new Trait(decoratedDef, 0));
-                    Messages.Message(
-                        $"{awardee.NameShortColored} is now considered Decorated.",
-                        awardee,
-                        MessageTypeDefOf.PositiveEvent
-                    );
-                } 
-                var ext = medal.def.GetModExtension<MedalExtension>();
-                if (ext?.removesTraits is not null)
-                {
-                    foreach (var traitDef in ext.removesTraits)
+                    // Determine target degree based on medal count
+                    var targetDegree = medalCount switch
                     {
-                        var existing = awardee.story.traits.GetTrait(traitDef);
-                        if (existing is null) continue;
-                        if (!Rand.Chance(traitDef.chance)) continue;
+                        >= MEDALS_EXHALTED => 2,
+                        >= MEDALS_HONORED => 1,
+                        >= MEDALS_DECORATED => 0,
+                        _ => -1
+                    };
+                    if (targetDegree >= 0)
+                    {
+                        var existing = awardee.story.traits.GetTrait(decoratedDef);
+                        if (existing is null)
+                        {
+                            // No decorated trait yet, grant it
+                            awardee.story.traits.GainTrait(new Trait(decoratedDef, targetDegree));
+                            var label = decoratedDef.DataAtDegree(targetDegree).label.CapitalizeFirst();
+                            Messages.Message(
+                                $"{awardee.NameShortColored} is now considered {label}.",
+                                awardee,
+                                MessageTypeDefOf.PositiveEvent
+                            );
+                        }
+                        else if (targetDegree > existing.Degree)
+                        {
+                            // Already has the trait but at a lower tier, upgrade it
+                            awardee.story.traits.RemoveTrait(existing);
+                            awardee.story.traits.GainTrait(new Trait(decoratedDef, targetDegree));
+                            var label = decoratedDef.DataAtDegree(targetDegree).label.CapitalizeFirst();
+                            Messages.Message(
+                                $"{awardee.NameShortColored} is now considered {label}.",
+                                awardee,
+                                MessageTypeDefOf.PositiveEvent
+                            );
+                        }
+                    }
+                }
+
+                var ext = medal.def.GetModExtension<MedalExtension>();
+                if (ext?.removesTraits != null)
+                {
+                    foreach (var entry in ext.removesTraits)
+                    {
+                        if (!Rand.Chance(entry.chance)) continue;
+
+                        // Find the trait on the pawn that matches both def AND degree
+                        var existing = awardee.story.traits.allTraits
+                            .FirstOrDefault(t => t.def == entry.trait && t.Degree == entry.degree);
+
+                        if (existing == null) continue;
+
                         awardee.story.traits.RemoveTrait(existing);
                         Messages.Message(
-                            $"{awardee.NameShortColored} has overcome the {traitDef.trait.degreeDatas[0].label} trait through distinguished service.",
+                            $"{awardee.NameShortColored} has overcome the {entry.Label} trait through distinguished service.",
                             awardee,
                             MessageTypeDefOf.PositiveEvent
                         );
                     }
                 }
-                if (ext?.addsTraits is not null)
+
+                if (ext?.addsTraits != null)
                 {
-                    foreach (var traitDef in ext.addsTraits)
+                    foreach (var entry in ext.addsTraits)
                     {
-                        var existing = awardee.story.traits.GetTrait(traitDef);
-                        if (existing is null) continue;
-                        if (awardee.story.traits.allTraits.Any(t => traitDef.trait.ConflictsWith(t))) continue;
-                        if (!Rand.Chance(traitDef.chance)) continue;
-                        awardee.story.traits.GainTrait(new(traitDef, 0));
+                        if (!Rand.Chance(entry.chance)) continue;
+
+                        // Skip if pawn already has this exact trait+degree
+                        if (awardee.story.traits.allTraits
+                            .Any(t => t.def == entry.trait && t.Degree == entry.degree))
+                            continue;
+
+                        // Check for conflicts with existing traits
+                        var newTrait = new Trait(entry.trait, entry.degree);
+                        if (awardee.story.traits.allTraits.Any(t => t.def.ConflictsWith(newTrait)))
+                            continue;
+
+                        awardee.story.traits.GainTrait(newTrait);
                         Messages.Message(
-                            $"{awardee.NameShortColored} has gained the {traitDef.trait.degreeDatas[0].label} trait through distinguished service.",
+                            $"{awardee.NameShortColored} has gained the {entry.Label} trait through distinguished service.",
                             awardee,
                             MessageTypeDefOf.PositiveEvent
                         );
@@ -352,254 +393,7 @@ namespace MedalMod
             return job;
         }
     }
-    
-    public class RocketRank : Apparel
-    {
-        
-    }
-    
-    public class Dialog_MedalAwarded : Window
-    {
-        private readonly RocketMedal medal;
-        private readonly Pawn awardee;
-        private readonly Pawn presenter;
 
-        public Dialog_MedalAwarded(RocketMedal medal, Pawn awardee, Pawn presenter)
-        {
-            this.medal = medal;
-            this.awardee = awardee;
-            this.presenter = presenter;
-            forcePause = true;
-            doCloseX = true;
-            absorbInputAroundWindow = true;
-        }
-
-        public override Vector2 InitialSize => new(500f, 400f);
-
-        public override void DoWindowContents(Rect inRect)
-        {
-            // Medal icon, large and centered
-            var iconRect = new Rect(inRect.x + (inRect.width - 128f) / 2f, inRect.y + 10f, 128f, 128f);
-            Widgets.ThingIcon(iconRect, medal);
-
-            // Medal name
-            var nameRect = new Rect(inRect.x, iconRect.yMax + 10f, inRect.width, 30f);
-            Text.Font = GameFont.Medium;
-            Text.Anchor = TextAnchor.MiddleCenter;
-            Widgets.Label(nameRect, medal.LabelCap);
-
-            // Awarded to / by
-            var detailRect = new Rect(inRect.x, nameRect.yMax + 6f, inRect.width, 24f);
-            Text.Font = GameFont.Small;
-            Widgets.Label(detailRect, $"Awarded to {awardee.NameFullColored} by {presenter.NameFullColored}");
-
-            // Citation
-            if (!medal.citation.NullOrEmpty())
-            {
-                var citationRect = new Rect(inRect.x + 20f, detailRect.yMax + 16f, inRect.width - 40f, 80f);
-                GUI.color = new Color(0.9f, 0.85f, 0.4f);
-                Text.Font = GameFont.Small;
-                Widgets.Label(citationRect, $"\"{medal.citation}\"");
-                GUI.color = Color.white;
-            }
-
-            Text.Font = GameFont.Small;
-            Text.Anchor = TextAnchor.UpperLeft;
-
-            // Close button
-            if (Widgets.ButtonText(new Rect(inRect.x + (inRect.width - 120f) / 2f, inRect.yMax - 45f, 120f, 35f), "Close"))
-                Close();
-        }
-    }
-
-    public class RocketMedal : Apparel
-    {
-        public CompBiocodable BiocodeComp => field ??= this.GetComp<CompBiocodable>();
-        private Pawn _cachedPawn = null;
-        
-        public string citation;
-        public int ceremonyQuality = -1; // -1 = not yet awarded
-        public bool isLocked = true;
-        
-        public override void ExposeData()
-        {
-            base.ExposeData();
-            Scribe_Values.Look(ref citation, "citation");
-            Scribe_Values.Look(ref isLocked, "isLocked", true);
-            Scribe_Values.Look(ref ceremonyQuality, "ceremonyQuality", -1);
-        }
-
-        public override string GetInspectString()
-        {
-            var sb = new StringBuilder(base.GetInspectString());
-            if (!citation.NullOrEmpty())
-            {
-                if (sb.Length > 0) sb.AppendLine();
-                sb.Append('\'');
-                sb.Append(citation);
-                sb.Append('\'');
-            }
-            return sb.ToString();
-        }
-
-        private void OpenCitationDialog()
-        {
-            Find.WindowStack.Add(new Dialog_WriteCitation(this));
-        }
-
-        public override string LabelNoCount
-        {
-            get
-            {
-                if (BiocodeComp is not { Biocoded: true, CodedPawn: not null }) return base.LabelNoCount;
-                if (field != null && _cachedPawn == BiocodeComp.CodedPawn) return field;
-                
-                _cachedPawn = BiocodeComp.CodedPawn;
-
-                var cleanLabel = GenLabel.ThingLabel(this.def, this.Stuff, 1);
-                if (AllComps != null)
-                {
-                    foreach (var comp in AllComps)
-                    {
-                        if (comp is CompBiocodable) continue; 
-                        cleanLabel = comp.TransformLabel(cleanLabel);
-                    }
-                }
-                var sb = new StringBuilder();
-                sb.Append(_cachedPawn.LabelShort);
-                sb.Append("'s");
-                sb.Append(' ');
-                sb.Append(cleanLabel);
-                field = sb.ToString();
-                return field;
-            }
-        } = null;
-        
-        public override IEnumerable<Gizmo> GetGizmos()
-        {
-            foreach (var gizmo in base.GetGizmos())
-                yield return gizmo;
-
-            var awardCeremonyBtn = new Command_Action
-            {
-                defaultLabel = "Award Ceremony",
-                defaultDesc = "Gather the colony to officially bestow this medal upon a colonist.",
-                icon = this.def.uiIcon, 
-                action = StartMedalRitual
-            };
-            
-            if (!ModsConfig.IdeologyActive)
-                awardCeremonyBtn.Disable("Ideology DLC must be active to award medals.");
-            
-            if (BiocodeComp.Biocoded)
-                awardCeremonyBtn.Disable("Medal has already been awarded.");
-
-            // Check if the player actually has a leader in their colony to enable the button
-            if (!ColonyHasPresenter(out _)) 
-                awardCeremonyBtn.Disable("Requires a viable presenter.");
-            
-            yield return awardCeremonyBtn;
-            
-            var citationBtn = new Command_Action
-            {
-                defaultLabel = citation.NullOrEmpty() ? "Write Citation" : "Edit Citation",
-                defaultDesc = "Write or edit the citation engraved on this medal.",
-                icon = MedalTextures.CitationIcon,
-                action = OpenCitationDialog
-            };
-            
-            yield return citationBtn;
-        }
-
-        private bool ColonyHasPresenter(out Pawn result)
-        {
-            result = null;
-            if (this.Map == null) return false;
-            foreach (var p in this.Map.mapPawns.FreeColonistsSpawned)
-            {
-                var role = p.Ideo?.GetRole(p);
-                if (role != null && (role.def == PreceptDefOf.IdeoRole_Leader || role.def == PreceptDefOf.IdeoRole_Moralist))
-                {
-                    result = p;
-                    return true; 
-                }
-            }
-            return false;
-        }
-        
-        public string MedalLabel
-        {
-            get
-            {
-                var cleanLabel = GenLabel.ThingLabel(this.def, this.Stuff, 1);
-                return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(cleanLabel);
-            }
-        }
-
-        private void StartMedalRitual()
-        {
-            if (!ColonyHasPresenter(out Pawn presenter)) return;
-            var pattern = DefDatabase<RitualPatternDef>.GetNamedSilentFail("ROCKET_AwardMedalPattern");
-            var dummyPreceptDef = DefDatabase<PreceptDef>.GetNamedSilentFail("ROCKET_MedalCeremonyPrecept");
-
-            if (pattern == null || dummyPreceptDef == null)
-            {
-                Log.Error("[MedalMod] Missing Ritual Defs! Check your XML names.");
-                return;
-            }
-
-            var safeMap = this.Map ?? this.MapHeld;
-            if (safeMap == null) return;
-
-            var ritualTarget = new TargetInfo(this);
-
-            var fakeRitual = (Precept_Ritual)PreceptMaker.MakePrecept(dummyPreceptDef);
-            fakeRitual.ideo = presenter.Ideo;
-            fakeRitual.sourcePattern = pattern;
-            var nameValue = MedalLabel;
-            var ceremonyName = $"{nameValue} Award Ceremony";
-            fakeRitual.SetName("Award Ceremony");
-            
-            fakeRitual.behavior = pattern.ritualBehavior.GetInstance();
-            fakeRitual.behavior.def = pattern.ritualBehavior;
-            fakeRitual.outcomeEffect = pattern.ritualOutcomeEffect.GetInstance();
-            fakeRitual.outcomeEffect.def = pattern.ritualOutcomeEffect;
-            fakeRitual.outcomeEffect.compDatas ??= new();
-            
-            Dialog_BeginRitual.ActionCallback startAction = delegate (RitualRoleAssignments assignments)
-            {
-                LordJob_Ritual lordJob = new LordJob_Ritual(
-                    selectedTarget: ritualTarget,
-                    ritual: fakeRitual,
-                    obligation: null,
-                    allStages: pattern.ritualBehavior.stages,
-                    assignments: assignments,
-                    organizer: null,
-                    spotOverride: null
-                );
-                LordMaker.MakeNewLord(Faction.OfPlayer, lordJob, safeMap, assignments.Participants);
-                return true; 
-            };
-
-            var outcomeDef = pattern.ritualOutcomeEffect;
-
-            Find.WindowStack.Add(new Dialog_BeginRitual(
-                ritualLabel: ceremonyName,
-                ritual: fakeRitual,       
-                target: ritualTarget,     
-                map: safeMap,             
-                action: startAction,      
-                organizer: null,
-                obligation: null,         
-                filter: null,
-                okButtonText: "Begin Ceremony",
-                requiredPawns: null,
-                forcedForRole: null,
-                outcomeDef        
-            ));
-        } 
-    }
-    
     [HarmonyPatch]
     public static class PatchSpeechGrammar
     {
@@ -708,7 +502,7 @@ namespace MedalMod
     {
         public static void Postfix(Pawn pawn, Apparel ap, ref float __result)
         {
-            if (ap is RocketMedal || (MedalMod.Settings.RanksIgnorePolicies && ap is RocketRank)) 
+            if (ap is RocketMedal) 
                 __result = -10000f;
         }
     }
@@ -886,16 +680,6 @@ namespace MedalMod
             else if (bodyType == BodyTypeDefOf.Female) bodyModifier = 0.95f;
             bodyModifier *= MedalMod.Settings.MedalScale;
             return bodyModifier;
-        }
-    }
-    
-    [HarmonyPatch(typeof(ThingFilter), nameof(ThingFilter.Allows), new[] { typeof(ThingDef) })]
-    public static class PatchRankPolicyBypass
-    {
-        public static void Postfix(ThingDef def, ref bool __result)
-        {
-            if (MedalMod.Settings.RanksIgnorePolicies && typeof(RocketRank).IsAssignableFrom(def.thingClass)) 
-                __result = true;
         }
     }
     

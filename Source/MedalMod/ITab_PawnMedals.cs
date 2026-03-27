@@ -39,8 +39,8 @@ namespace MedalMod
     public class ITab_PawnMedals : ITab
     {
         private Vector2 _scrollPosition;
-        private const float MEDAL_ROW_HEIGHT = 80f;
-        private const float ICON_SIZE = 64f;
+        private const float MEDAL_ROW_HEIGHT = 90f;
+        private const float ICON_SIZE = 80f;
         private const float PADDING = 10f;
         private const float TAB_WIDTH = 400f;
         private const float TAB_HEIGHT = 480f;
@@ -75,6 +75,27 @@ namespace MedalMod
 
         private static List<RocketMedal> GetMedals(Pawn pawn) => 
             pawn.apparel.WornApparel.OfType<RocketMedal>().ToList();
+        
+        private bool HasAwardInfo(RocketMedal medal) => medal.awardedBy != null || medal.awardedTick >= 0;
+
+        private string GetAwardInfo(RocketMedal medal)
+        {
+            var sb = new StringBuilder();
+            if (medal.awardedBy != null)
+            {
+                sb.Append("Presented by ");
+                sb.Append(medal.awardedBy.LabelShort);
+            }
+            if (medal.awardedTick >= 0)
+            {
+                if (sb.Length > 0) sb.Append(" on ");
+                sb.Append(GenDate.DateFullStringAt(
+                    GenDate.TickGameToAbs(medal.awardedTick),
+                    Find.WorldGrid.LongLatOf(Find.CurrentMap.Tile)
+                ));
+            }
+            return sb.ToString();
+        }
 
         protected override void FillTab()
         {
@@ -137,6 +158,11 @@ namespace MedalMod
             if (!statText.NullOrEmpty())
             {
                 height += Text.CalcHeight(statText, textWidth);
+            }
+            
+            if (HasAwardInfo(medal))
+            {
+                height += Text.CalcHeight(GetAwardInfo(medal), textWidth) + 2f;
             }
 
             Text.Font = GameFont.Small;
@@ -214,6 +240,7 @@ namespace MedalMod
             }
 
             // Stat bonuses summary
+            var statsBottom = descBottom;
             var statText = GetStatSummary(medal);
             if (!statText.NullOrEmpty())
             {
@@ -223,7 +250,21 @@ namespace MedalMod
                 GUI.color = new Color(0.5f, 0.8f, 0.5f);
                 Widgets.Label(statsRect, statText);
                 GUI.color = Color.white;
+                statsBottom = statsRect.yMax;
             }
+            
+            // Award info
+            if (HasAwardInfo(medal))
+            {
+                Text.Font = GameFont.Tiny;
+                var awardText = GetAwardInfo(medal);
+                var awardHeight = Text.CalcHeight(awardText, textWidth);
+                var awardRect = new Rect(textX, statsBottom + 2f, textWidth, awardHeight);
+                GUI.color = Color.gray;
+                Widgets.Label(awardRect, awardText);
+                GUI.color = Color.white;
+            }
+            
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.UpperLeft;
 
@@ -265,7 +306,7 @@ namespace MedalMod
                 if (i > 0) sb.Append(", ");
                 var val = offsets[i].value;
                 sb.Append(val >= 0 ? "+" : "");
-                sb.Append(val.ToStringPercent());
+                sb.Append(offsets[i].stat.ValueToString(val));
                 sb.Append(' ');
                 sb.Append(offsets[i].stat.LabelCap);
             }

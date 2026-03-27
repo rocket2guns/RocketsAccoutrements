@@ -2,12 +2,6 @@
 <Defs>
 
 	<ThingCategoryDef>
-		<defName>ROCKET_Apparel_Ranks</defName>
-		<label>Ranks</label>
-		<parent>Apparel</parent>
-    </ThingCategoryDef>
-	
-	<ThingCategoryDef>
 		<defName>ROCKET_Apparel_Medals</defName>
 		<label>Medals</label>
 		<parent>Apparel</parent>
