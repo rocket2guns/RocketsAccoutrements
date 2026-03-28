@@ -194,8 +194,8 @@ namespace MedalMod
             );
             var lockIcon = medal.isLocked ?  MedalTextures.LockedIcon : MedalTextures.UnlockedIcon;
             var lockTip = medal.isLocked
-                ? "This medal is locked and cannot be removed from the pawn. Click to unlock."
-                : "This medal is unlocked and can be removed from the pawn. Click to lock.";
+                ? "ROCKET_MedalLocked".Translate()
+                : "ROCKET_MedalUnlocked".Translate();
 
             GUI.color = Color.gray;
             if (Widgets.ButtonImage(lockRect, lockIcon, GUI.color))

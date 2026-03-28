@@ -64,7 +64,7 @@ public class Dialog_WriteCitation : Window
 
         // Stat bonuses
         var offsets = medal.def.equippedStatOffsets;
-        if (offsets != null && offsets.Count > 0)
+        if (offsets is { Count: > 0 })
         {
             var statsY = descRect.yMax + 10f;
             GUI.color = new Color(0.5f, 0.8f, 0.5f);
@@ -88,14 +88,14 @@ public class Dialog_WriteCitation : Window
         // Header
         Text.Font = GameFont.Medium;
         var headerRect = new Rect(rect.x, rect.y + 10f, rect.width, 30f);
-        Widgets.Label(headerRect, "Write Citation");
+        Widgets.Label(headerRect, "ROCKET_WriteCitation".Translate());
         Text.Font = GameFont.Small;
 
         // Instruction
         var instrRect = new Rect(rect.x, headerRect.yMax + 4f, rect.width, 36f);
         GUI.color = Color.gray;
         Text.Font = GameFont.Tiny;
-        Widgets.Label(instrRect, "Write the citation to be engraved on this medal. This will be permanently sealed once the medal is awarded.");
+        Widgets.Label(instrRect, "ROCKET_WriteCitationDesc".Translate());
         GUI.color = Color.white;
 
         // Text area
@@ -120,13 +120,13 @@ public class Dialog_WriteCitation : Window
         var btnY = textRect.yMax + 28f;
         var btnWidth = (rect.width - 10f) / 2f;
 
-        if (Widgets.ButtonText(new Rect(rect.x, btnY, btnWidth, 35f), "Confirm"))
+        if (Widgets.ButtonText(new Rect(rect.x, btnY, btnWidth, 35f), "ROCKET_ConfirmButton".Translate()))
         {
             medal.citation = draft.NullOrEmpty() ? null : draft.Trim();
             Close();
         }
 
-        if (Widgets.ButtonText(new Rect(rect.x + btnWidth + 10f, btnY, btnWidth, 35f), "Clear"))
+        if (Widgets.ButtonText(new Rect(rect.x + btnWidth + 10f, btnY, btnWidth, 35f), "ROCKET_ClearButton".Translate()))
         {
             draft = "";
         }

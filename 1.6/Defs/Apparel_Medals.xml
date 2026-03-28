@@ -39,7 +39,12 @@
 		<defName>ROCKET_AwardMedalOutcome</defName>
 		<description>The medal is awarded to the colonist.</description>
 		<workerClass>MedalMod.RitualOutcomeEffectWorkerAwardMedal</workerClass>
-		<comps/>
+		<comps>
+			<li Class="MedalMod.RitualOutcomeComp_MedalPreview"/>
+			<li Class="MedalMod.RitualOutcomeComp_CeremonyAttendance"/>
+			<li Class="MedalMod.RitualOutcomeComp_CeremonyRoom"/>
+			<li Class="MedalMod.RitualOutcomeComp_CeremonyCitation"/>
+		</comps>
 	</RitualOutcomeEffectDef>
 	
 	<PreceptDef>
@@ -87,7 +92,7 @@
 		<spectatorGerund>spectate</spectatorGerund>
 		<roles>
 			<li Class="MedalMod.RitualRole_Presenter">
-				<label>leader</label>
+				<label>presenter</label>
 				<id>leader</id>
 				<required>True</required>
 				<maxCount>1</maxCount>
@@ -100,6 +105,7 @@
 				<label>Awardee</label>
 				<required>True</required>
 				<maxCount>1</maxCount>
+				<countsAsParticipant>False</countsAsParticipant>
 				<mustBeAbleToReachTarget>True</mustBeAbleToReachTarget>
 			</li>
 		</roles>
@@ -230,8 +236,8 @@
 			<drawSize>0.75</drawSize>
 		</graphicData>
 		<costList>
-			<Gold>5</Gold>
-			<Hyperweave>20</Hyperweave>
+			<Gold>6</Gold>
+			<Hyperweave>10</Hyperweave>
 		</costList>
 		<equippedStatOffsets>
 			<PawnBeauty>0.1</PawnBeauty>
@@ -243,6 +249,8 @@
 			<Mass>0.01</Mass>
 			<EquipDelay>0.5</EquipDelay>
 			<DeteriorationRate>0</DeteriorationRate>
+			<Bulk MayRequire="CETeam.CombatExtended">0.1</Bulk>
+			<WornBulk MayRequire="CETeam.CombatExtended">0</WornBulk>
 		</statBases>
 		
 		<thingCategories Inherit="False">
@@ -288,6 +296,37 @@
 		<equippedStatOffsets>
 			<MedicalSurgerySuccessChance>0.05</MedicalSurgerySuccessChance>
 			<MedicalTendQuality>0.08</MedicalTendQuality>
+		</equippedStatOffsets>
+	</ThingDef>
+	
+	<ThingDef ParentName="ROCKET_MedalBase">
+		<defName>ROCKET_Medal_ResearchService</defName>
+		<label>research service medal</label>
+		<description>Awarded for those who have distinguished themselves serving in the research fields.</description>
+		<graphicData>
+			<texPath>Things/Medals/ResearchService</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/ResearchService</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<ResearchSpeed>0.05</ResearchSpeed>
+			<DrugCookingSpeed>0.05</DrugCookingSpeed>
+		</equippedStatOffsets>
+	</ThingDef>
+	
+	<ThingDef ParentName="ROCKET_MedalBase">
+		<defName>ROCKET_Medal_LaborService</defName>
+		<label>labor service medal</label>
+		<description>Awarded for those who have distinguished themselves serving in the support fields.</description>
+		<graphicData>
+			<texPath>Things/Medals/LaborService</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/LaborService</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<WorkSpeedGlobal>0.06</WorkSpeedGlobal>
 		</equippedStatOffsets>
 	</ThingDef>
 	

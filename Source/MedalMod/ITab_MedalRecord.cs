@@ -44,7 +44,7 @@ public class ITab_MedalRecord : ITab
 
         if (medal.BiocodeComp is { Biocoded: true, CodedPawn: not null })
         {
-            var awardLine = $"Awarded to {medal.BiocodeComp.CodedPawn.NameFullColored}";
+            var awardLine = "ROCKET_MedalAwardedTo".Translate(medal.BiocodeComp.CodedPawn.NameFullColored);
             var awardHeight = Text.CalcHeight(awardLine, rect.width);
             Widgets.Label(new Rect(rect.x, curY, rect.width, awardHeight), awardLine);
             curY += awardHeight + 4f;
@@ -57,7 +57,7 @@ public class ITab_MedalRecord : ITab
             var presenterName = medal.awardedBy.Dead
                 ? $"{medal.awardedBy.LabelShort} (deceased)"
                 : medal.awardedBy.NameFullColored.ToString();
-            var presenterLine = $"Presented by {presenterName}";
+            var presenterLine = "ROCKET_MedalPresentedBy".Translate(presenterName);
             var presenterHeight = Text.CalcHeight(presenterLine, rect.width);
             Widgets.Label(new Rect(rect.x, curY, rect.width, presenterHeight), presenterLine);
             curY += presenterHeight + 4f;

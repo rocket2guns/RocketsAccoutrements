@@ -67,8 +67,8 @@ namespace MedalMod
 
             var awardCeremonyBtn = new Command_Action
             {
-                defaultLabel = "Award Ceremony",
-                defaultDesc = "Gather the colony to officially bestow this medal upon a colonist.",
+                defaultLabel = "ROCKET_AwardCeremony".Translate(),
+                defaultDesc = "ROCKET_CeremonyDesc".Translate(),
                 icon = this.def.uiIcon, 
                 action = StartMedalRitual
             };
@@ -77,18 +77,18 @@ namespace MedalMod
                 awardCeremonyBtn.Disable("Ideology DLC must be active to award medals.");
                 
             if (BiocodeComp.Biocoded)
-                awardCeremonyBtn.Disable("Medal has already been awarded.");
+                awardCeremonyBtn.Disable("ROCKET_DisabledAlreadyAwarded".Translate());
 
-            // Check if the player actually has a leader in their colony to enable the button
+            // Check if the player actually has a presenter in their colony to enable the button
             if (!ColonyHasPresenter(out _)) 
-                awardCeremonyBtn.Disable("Requires a viable presenter.");
+                awardCeremonyBtn.Disable("ROCKET_DisabledRequiresPresenter".Translate());
                 
             yield return awardCeremonyBtn;
                 
             var citationBtn = new Command_Action
             {
-                defaultLabel = citation.NullOrEmpty() ? "Write Citation" : "Edit Citation",
-                defaultDesc = "Write or edit the citation engraved on this medal.",
+                defaultLabel = citation.NullOrEmpty() ? "ROCKET_WriteCitation".Translate() : "ROCKET_EditCitation".Translate(),
+                defaultDesc = "ROCKET_CitationDesc".Translate(),
                 icon = MedalTextures.CitationIcon,
                 action = OpenCitationDialog
             };
@@ -141,9 +141,8 @@ namespace MedalMod
             var fakeRitual = (Precept_Ritual)PreceptMaker.MakePrecept(dummyPreceptDef);
             fakeRitual.ideo = presenter.Ideo;
             fakeRitual.sourcePattern = pattern;
-            var nameValue = MedalLabel;
-            var ceremonyName = $"{nameValue} Award Ceremony";
-            fakeRitual.SetName("Award Ceremony");
+            var ceremonyName = "ROCKET_AwardCeremony".Translate();
+            fakeRitual.SetName(ceremonyName);
                 
             fakeRitual.behavior = pattern.ritualBehavior.GetInstance();
             fakeRitual.behavior.def = pattern.ritualBehavior;
@@ -177,7 +176,7 @@ namespace MedalMod
                 organizer: null,
                 obligation: null,         
                 filter: null,
-                okButtonText: "Begin Ceremony",
+                okButtonText: "ROCKET_BeginCeremony".Translate(),
                 requiredPawns: null,
                 forcedForRole: null,
                 outcomeDef        

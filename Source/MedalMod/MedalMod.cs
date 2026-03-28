@@ -127,29 +127,72 @@ namespace MedalMod
         }
     }
     
+
     public static class CeremonyQuality
     {
-        // Returns 0-3 matching the thought stage index
-        public static int GetStageIndex(int attendees, int totalColonists)
-        {
-            if (totalColonists <= 0) return 0;
-            var ratio = (float)attendees / totalColonists;
+        private const float AttendanceWeight = 0.4f;
+        private const float RoomWeight = 0.4f;
+        private const float CitationWeight = 0.2f;
 
-            if (ratio >= 0.8f) return 3;  // Legendary: 80%+ of colony attended
-            if (ratio >= 0.5f) return 2;  // Grand: half the colony
-            if (ratio >= 0.25f) return 1; // Decent: at least a quarter
-            return 0;                      // Poor: barely anyone
+        /// <summary>
+        /// Returns a quality score from 0.0 to 1.0 based on attendance, room, and citation.
+        /// </summary>
+        public static float GetQualityScore(int attendees, int totalColonists, float roomImpressiveness, bool hasCitation)
+        {
+            // Attendance: 0-1 based on ratio, capped at 1.0
+            var attendanceRatio = totalColonists > 0
+                ? Mathf.Clamp01((float)attendees / totalColonists)
+                : 0f;
+
+            // Room impressiveness: mapped from 0-170 (max in vanilla) to 0-1
+            // Somewhat impressive (25) = ~0.15, Very impressive (50) = ~0.29
+            // Extremely impressive (85) = ~0.5, Unbelievably impressive (170) = 1.0
+            var roomScore = Mathf.Clamp01(roomImpressiveness / 170f);
+
+            // Citation: binary
+            var citationScore = hasCitation ? 1f : 0f;
+
+            return (attendanceRatio * AttendanceWeight)
+                 + (roomScore * RoomWeight)
+                 + (citationScore * CitationWeight);
         }
 
-        public static string GetQualityLabel(int stageIndex)
+        /// <summary>
+        /// Returns 0-3 stage index from a quality score.
+        /// </summary>
+        public static int GetStageIndex(float qualityScore)
         {
-            switch (stageIndex)
+            if (qualityScore >= 0.8f) return 3;  // Legendary
+            if (qualityScore >= 0.5f) return 2;  // Grand
+            if (qualityScore >= 0.25f) return 1; // Decent
+            return 0;                             // Poor
+        }
+
+        // Convenience overload for backward compat
+        public static int GetStageIndex(int attendees, int totalColonists) => 
+            GetStageIndex(GetQualityScore(attendees, totalColonists, 0f, false));
+
+        public static string GetQualityLabel(int stageIndex) =>
+            stageIndex switch
             {
-                case 3: return "legendary";
-                case 2: return "grand";
-                case 1: return "decent";
-                default: return "poor";
-            }
+                3 => "legendary",
+                2 => "grand",
+                1 => "decent",
+                _ => "poor"
+            };
+
+        /// <summary>
+        /// Gets room impressiveness at a target position. Returns 0 if outdoors.
+        /// </summary>
+        public static float GetRoomImpressiveness(TargetInfo target)
+        {
+            if (!target.HasThing && !target.Cell.IsValid) return 0f;
+            var map = target.Map;
+            if (map == null) return 0f;
+            var cell = target.Cell;
+            var room = cell.GetRoom(map);
+            if (room == null || room.PsychologicallyOutdoors) return 0f;
+            return room.GetStat(RoomStatDefOf.Impressiveness);
         }
     }
     
@@ -213,9 +256,15 @@ namespace MedalMod
 
             var attendees = totalPresence.Count;
             var totalColonists = jobRitual.Map.mapPawns.FreeColonistsSpawnedCount;
-            var stageIndex = CeremonyQuality.GetStageIndex(attendees, totalColonists);
-            medal.ceremonyQuality = stageIndex;
+            var roomImpressiveness = CeremonyQuality.GetRoomImpressiveness(jobRitual.selectedTarget);
+            var hasCitation = !medal.citation.NullOrEmpty();
+
+            var qualityScore = CeremonyQuality.GetQualityScore(
+                attendees, totalColonists, roomImpressiveness, hasCitation);
+            var stageIndex = CeremonyQuality.GetStageIndex(qualityScore);
             var qualityLabel = CeremonyQuality.GetQualityLabel(stageIndex);
+
+            medal.ceremonyQuality = stageIndex;
 
             var awardedThought = DefDatabase<ThoughtDef>.GetNamed("ROCKET_AwardedMedal_Thought", false);
             var memory = (Thought_Memory)ThoughtMaker.MakeThought(awardedThought, stageIndex);
@@ -361,7 +410,7 @@ namespace MedalMod
                 reason = null;
                 return true;
             }
-            if (!skipReason) reason = "Must be the Leader or Moral Guide.";
+            if (!skipReason) reason = "ROCKET_MustBeLeaderOrGuide".Translate();
             return false;
         }
     }
@@ -531,7 +580,7 @@ namespace MedalMod
 
             if (MedalMod.Settings.MedalsRequireCeremony && !CheckRitualStatus(__instance.pawn) && !comp.Biocoded)
             {
-                Messages.Message($"Medals can only be awarded via ceremonies", MessageTypeDefOf.RejectInput, false);
+                Messages.Message($"ROCKET_FailMedalNeedsCeremony".Translate(), MessageTypeDefOf.RejectInput, false);
                 return false;
             }
             

@@ -6,7 +6,7 @@
 	<li>1.6</li>
   </supportedVersions>
   <packageId>Rockets.Medals</packageId>
-  <description>Lightweight Accoutrements mod with vanilla feel and styling.</description>
+  <description>Allows you to award medals to colonists via award ceremonies. Utilizes base game mechanics to maintain a vanilla feel and keep the project maintainable and performant. Written for performance and scalability and to fit with the game. Medals provide small bonuses, but are intended for roleplay and flavor, not power. A new medal tab is included that shows the medal log for each colonist, in addition to them being on the character inventory.</description>
   <modDependencies>
     <li>
       <packageId>brrainz.harmony</packageId>

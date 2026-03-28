@@ -4,4 +4,21 @@
 	<ROCKET_NoMedals>No medals have been awarded to this colonist.</ROCKET_NoMedals>
 	<ROCKET_MedalAwardedTo>Awarded To: {0}</ROCKET_MedalAwardedTo>
 	<ROCKET_Record>Record</ROCKET_Record>
+	<ROCKET_AwardCeremony>Award Ceremony</ROCKET_AwardCeremony>
+	<ROCKET_BeginCeremony>Begin Ceremony</ROCKET_BeginCeremony>
+	<ROCKET_WriteCitation>Write Citation</ROCKET_WriteCitation>
+	<ROCKET_WriteCitationDesc>Write the citation to be engraved on this medal. This will be permanently sealed once the medal is awarded.</ROCKET_WriteCitationDesc>
+	<ROCKET_EditCitation>Edit Citation</ROCKET_EditCitation>
+	<ROCKET_ConfirmButton>Confirm</ROCKET_ConfirmButton>
+	<ROCKET_ClearButton>Clear</ROCKET_ClearButton>
+	<ROCKET_CitationDesc>Write or edit the citation engraved on this medal.</ROCKET_CitationDesc>
+	<ROCKET_CeremonyDesc>Gather the colony to officially bestow this medal upon a colonist.</ROCKET_CeremonyDesc>
+	<ROCKET_DisabledAlreadyAwarded>Medal has already been awarded.</ROCKET_DisabledAlreadyAwarded>
+	<ROCKET_DisabledRequiresPresenter>Requires a viable presenter.</ROCKET_DisabledRequiresPresenter>
+	<ROCKET_MedalLocked>This medal is locked and cannot be removed from the pawn. Click to unlock.</ROCKET_MedalLocked>
+	<ROCKET_MedalUnlocked>This medal is unlocked and can be removed from the pawn. Click to lock.</ROCKET_MedalUnlocked>
+	<ROCKET_MedalPresentedBy>Presented by {0}</ROCKET_MedalPresentedBy>
+	<ROCKET_MedalAwardedTo>Awarded to {0}</ROCKET_MedalAwardedTo>
+	<ROCKET_MustBeLeaderOrGuide>Must be the Leader or Moral Guide.</ROCKET_MustBeLeaderOrGuide>
+	<ROCKET_FailMedalNeedsCeremony>Medals can only be awarded via ceremonies</ROCKET_FailMedalNeedsCeremony>
 </LanguageData>
