@@ -615,12 +615,6 @@ namespace MedalMod
         {
             new Harmony("com.rocket.medalmod").PatchAll();
             Log.Message("[MedalMod] Harmony patches applied successfully.");
-            
-            foreach (var tex in Resources.FindObjectsOfTypeAll<Texture2D>())
-            {
-                if (tex.name.ToLower().Contains("lock"))
-                    Log.Message($"[MedalMod] Found texture: {tex.name}");
-            }
         }
     }
     
