@@ -1,6 +1,7 @@
 # Build output
 Source/**/bin/
 Source/**/obj/
+Source/obj/
 
 # IDE / Rider / Visual Studio
 *.user
