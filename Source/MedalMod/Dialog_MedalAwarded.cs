@@ -6,7 +6,7 @@ namespace MedalMod;
 
 public class Dialog_MedalAwarded : Window
 {
-    private static readonly Color GoldColor = new(0.9f, 0.85f, 0.4f);
+    public static readonly Color GoldColor = new(0.9f, 0.85f, 0.4f);
     private static readonly Color GreenColor = new(0.4f, 0.9f, 0.4f);
 
     private readonly RocketMedal medal;
@@ -23,7 +23,7 @@ public class Dialog_MedalAwarded : Window
         absorbInputAroundWindow = true;
     }
 
-    public override Vector2 InitialSize => new(500f, 480f);
+    public override Vector2 InitialSize => new(500f, 500f);
 
     public override void DoWindowContents(Rect inRect)
     {
@@ -87,7 +87,29 @@ public class Dialog_MedalAwarded : Window
             GUI.color = Color.white;
             curY += citationHeight + 12f;
         }
-
+        
+        
+        var ext = medal.def.GetModExtension<MedalExtension>();
+        var honor = ext?.honorAwarded ?? 0;
+        if (ModsConfig.RoyaltyActive && honor > 0)
+        {
+            Text.Font = GameFont.Tiny;
+            GUI.color = GoldColor;
+            var iconSize = 14f;
+            var gap = 4f;
+            var labelText = $"honor +{honor}";
+            var textWidth = Text.CalcSize(labelText).x;
+            var totalWidth = iconSize + gap + textWidth;
+            var startX = inRect.x + (inRect.width - totalWidth) / 2f;
+            var centerY = curY + (24f - iconSize) / 2f;
+            if (MedalTextures.HonorIcon != null)
+                GUI.DrawTexture(new Rect(startX, centerY, iconSize, iconSize), MedalTextures.HonorIcon);
+            Widgets.Label(new Rect(startX + iconSize + gap, curY, textWidth, 24f), labelText);
+            GUI.color = Color.white;
+            Text.Font = GameFont.Small;
+            curY += 24f;
+        }
+        
         // Stat bonuses
         var statOffsets = medal.def.equippedStatOffsets;
         if (statOffsets is { Count: > 0 })

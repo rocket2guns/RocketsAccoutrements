@@ -51,14 +51,7 @@ namespace MedalMod
             size = new(TAB_WIDTH, TAB_HEIGHT);
         }
 
-        public override bool IsVisible
-        {
-            get
-            {
-                var pawn = SelPawnForGear;
-                return pawn is { apparel: not null };
-            }
-        }
+        public override bool IsVisible => HasMedals(SelPawnForGear);
 
         private Pawn SelPawnForGear
         {
@@ -72,9 +65,6 @@ namespace MedalMod
                 };
             }
         }
-
-        private static List<RocketMedal> GetMedals(Pawn pawn) => 
-            pawn.apparel.WornApparel.OfType<RocketMedal>().ToList();
         
         private bool HasAwardInfo(RocketMedal medal) => medal.awardedBy != null || medal.awardedTick >= 0;
 
@@ -97,12 +87,22 @@ namespace MedalMod
             return sb.ToString();
         }
 
+        private bool HasMedals(Pawn pawn)
+        {
+            if (pawn?.apparel == null) return false;
+            foreach (var apparel in pawn.apparel.WornApparel)
+            {
+                if (apparel is RocketMedal)
+                    return true;
+            }
+            return false;
+        }
+
         protected override void FillTab()
         {
             var pawn = SelPawnForGear;
             if (pawn == null) return;
 
-            var medals = GetMedals(pawn);
             var outerRect = new Rect(0f, 0f, size.x, size.y).ContractedBy(PADDING);
 
             var headerRect = new Rect(outerRect.x, outerRect.y, outerRect.width, 30f);
@@ -110,7 +110,7 @@ namespace MedalMod
             Widgets.Label(headerRect, "ROCKET_MedalsTab".Translate());
             Text.Font = GameFont.Small;
 
-            if (medals.Count == 0)
+            if (!HasMedals(pawn))
             {
                 var emptyRect = new Rect(outerRect.x, headerRect.yMax + PADDING, outerRect.width, 40f);
                 GUI.color = Color.gray;
@@ -123,15 +123,17 @@ namespace MedalMod
             var viewWidth = listRect.width - 16f; // scrollbar
 
             var totalHeight = 0f;
-            foreach (var medal in medals)
-                totalHeight += GetRowHeight(medal, viewWidth) + PADDING;
+            foreach (var apparel in pawn.apparel.WornApparel)
+                if (apparel is RocketMedal medal)
+                    totalHeight += GetRowHeight(medal, viewWidth) + PADDING;
             var viewRect = new Rect(0f, 0f, viewWidth, totalHeight);
 
             Widgets.BeginScrollView(listRect, ref _scrollPosition, viewRect);
 
             var curY = 0f;
-            foreach (var medal in medals)
-                DrawMedalRow(viewWidth, ref curY, medal);
+            foreach (var apparel in pawn.apparel.WornApparel)
+                if (apparel is RocketMedal medal)
+                    DrawMedalRow(viewWidth, ref curY, medal);
 
             Widgets.EndScrollView();
         }
@@ -164,6 +166,11 @@ namespace MedalMod
             {
                 height += Text.CalcHeight(GetAwardInfo(medal), textWidth) + 2f;
             }
+            
+            var ext = medal.def.GetModExtension<MedalExtension>();
+            var honor = ext?.honorAwarded ?? 0;
+            if (honor > 0)
+                height += Text.CalcHeight("0", textWidth) + 2f;
 
             Text.Font = GameFont.Small;
             height += 8f;
@@ -238,15 +245,31 @@ namespace MedalMod
                 GUI.color = Color.white;
                 descBottom = descRect.yMax;
             }
+            
+            var statsBottom = descBottom;
+            var ext = medal.def.GetModExtension<MedalExtension>();
+            var honor = ext?.honorAwarded ?? 0;
+            if (ModsConfig.RoyaltyActive && honor > 0)
+            {
+                Text.Font = GameFont.Tiny;
+                var iconSize = 14f;
+                var crownRect = new Rect(textX, descBottom + 4f, iconSize, iconSize);
+                var labelRect = new Rect(crownRect.xMax + 4f, descBottom + 2f, textWidth - iconSize - 4f, Text.CalcHeight($"+{honor}", textWidth));
+                GUI.color = Dialog_MedalAwarded.GoldColor;
+                if (MedalTextures.HonorIcon != null)
+                    GUI.DrawTexture(crownRect, MedalTextures.HonorIcon);
+                Widgets.Label(labelRect, $"honor +{honor}");
+                GUI.color = Color.white;
+                statsBottom = labelRect.yMax;
+            }
 
             // Stat bonuses summary
-            var statsBottom = descBottom;
             var statText = GetStatSummary(medal);
             if (!statText.NullOrEmpty())
             {
                 Text.Font = GameFont.Tiny;
                 var statHeight = Text.CalcHeight(statText, textWidth);
-                var statsRect = new Rect(textX, descBottom + 2f, textWidth, statHeight);
+                var statsRect = new Rect(textX, statsBottom + 2f, textWidth, statHeight);
                 GUI.color = new Color(0.5f, 0.8f, 0.5f);
                 Widgets.Label(statsRect, statText);
                 GUI.color = Color.white;
@@ -267,30 +290,6 @@ namespace MedalMod
             
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.UpperLeft;
-
-            // Tooltip on hover
-            if (Mouse.IsOver(rowRect) && !Mouse.IsOver(lockRect))
-            {
-                var sb = new StringBuilder();
-                sb.Append(medal.MedalLabel);
-                sb.AppendLine();
-                sb.AppendLine();
-                sb.Append(medal.def.description);
-                if (medal.BiocodeComp is { Biocoded: true, CodedPawn: not null })
-                {
-                    sb.AppendLine();
-                    sb.Append("ROCKET_MedalAwardedTo".Translate(medal.BiocodeComp.CodedPawn.LabelShort));
-                }
-                if (!medal.citation.NullOrEmpty())
-                {
-                    sb.AppendLine();
-                    sb.AppendLine();
-                    sb.Append('"');
-                    sb.Append(medal.citation);
-                    sb.Append('"');
-                }
-                TooltipHandler.TipRegion(rowRect, sb.ToString());
-            }
 
             curY += rowHeight + PADDING;
         }

@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+	<!--  RECIPE BASE  -->
+
+	<RecipeDef Name="ROCKET_MedalRecipeBase" Abstract="True">
+		<workAmount>10000</workAmount>
+		<workSpeedStat>GeneralLaborSpeed</workSpeedStat>
+		<workSkill>Crafting</workSkill>
+		<effectWorking>Smith</effectWorking>
+		<soundWorking>Recipe_Smith</soundWorking>
+		<recipeUsers>
+			<li>ElectricSmithy</li>
+			<li>FueledSmithy</li>
+		</recipeUsers>
+		<researchPrerequisites>
+			<li>Smithing</li>
+		</researchPrerequisites>
+	</RecipeDef>
+
+	<!--  TIER RECIPE BASES  -->
+
+	<RecipeDef ParentName="ROCKET_MedalRecipeBase" Name="ROCKET_SimpleMedalRecipeBase" Abstract="True">
+		<skillRequirements>
+			<Crafting>5</Crafting>
+		</skillRequirements>
+		<ingredients>
+			<li>
+				<filter>
+					<thingDefs><li>Silver</li></thingDefs>
+				</filter>
+				<count>10</count>
+			</li>
+			<li>
+				<filter>
+					<thingDefs><li>DevilstrandCloth</li></thingDefs>
+				</filter>
+				<count>10</count>
+			</li>
+		</ingredients>
+		<fixedIngredientFilter>
+			<thingDefs>
+				<li>Silver</li>
+				<li>DevilstrandCloth</li>
+			</thingDefs>
+		</fixedIngredientFilter>
+		<researchPrerequisites>
+			<li>NobleApparel</li>
+		</researchPrerequisites>
+	</RecipeDef>
+
+	<RecipeDef ParentName="ROCKET_MedalRecipeBase" Name="ROCKET_IntermediateMedalRecipeBase" Abstract="True">
+		<skillRequirements>
+			<Crafting>6</Crafting>
+		</skillRequirements>
+		<ingredients>
+			<li>
+				<filter>
+					<thingDefs><li>Silver</li></thingDefs>
+				</filter>
+				<count>20</count>
+			</li>
+			<li>
+				<filter>
+					<thingDefs><li>DevilstrandCloth</li></thingDefs>
+				</filter>
+				<count>20</count>
+			</li>
+		</ingredients>
+		<fixedIngredientFilter>
+			<thingDefs>
+				<li>Silver</li>
+				<li>Plasteel</li>
+				<li>DevilstrandCloth</li>
+			</thingDefs>
+		</fixedIngredientFilter>
+		<researchPrerequisites>
+			<li>NobleApparel</li>
+		</researchPrerequisites>
+	</RecipeDef>
+
+	<RecipeDef ParentName="ROCKET_MedalRecipeBase" Name="ROCKET_AdvancedMedalRecipeBase" Abstract="True">
+		<skillRequirements>
+			<Crafting>7</Crafting>
+		</skillRequirements>
+		<ingredients>
+			<li>
+				<filter>
+					<thingDefs><li>Gold</li></thingDefs>
+				</filter>
+				<count>10</count>
+			</li>
+			<li>
+				<filter>
+					<thingDefs><li>Hyperweave</li></thingDefs>
+				</filter>
+				<count>20</count>
+			</li>
+		</ingredients>
+		<fixedIngredientFilter>
+			<thingDefs>
+				<li>Gold</li>
+				<li>Hyperweave</li>
+			</thingDefs>
+		</fixedIngredientFilter>
+		<researchPrerequisites>
+			<li>RoyalApparel</li>
+		</researchPrerequisites>
+	</RecipeDef>
+
+	<RecipeDef ParentName="ROCKET_MedalRecipeBase" Name="ROCKET_LegendaryMedalRecipeBase" Abstract="True">
+		<skillRequirements>
+			<Crafting>8</Crafting>
+		</skillRequirements>
+		<ingredients>
+			<li>
+				<filter>
+					<thingDefs><li>Gold</li></thingDefs>
+				</filter>
+				<count>25</count>
+			</li>
+			<li>
+				<filter>
+					<thingDefs><li>Plasteel</li></thingDefs>
+				</filter>
+				<count>50</count>
+			</li>
+			<li>
+				<filter>
+					<thingDefs><li>Hyperweave</li></thingDefs>
+				</filter>
+				<count>20</count>
+			</li>
+		</ingredients>
+		<fixedIngredientFilter>
+			<thingDefs>
+				<li>Gold</li>
+				<li>Plasteel</li>
+				<li>Hyperweave</li>
+			</thingDefs>
+		</fixedIngredientFilter>
+		<researchPrerequisites>
+			<li>RoyalApparel</li>
+		</researchPrerequisites>
+	</RecipeDef>
+
+	<!--  SIMPLE RECIPES  -->
+
+	<RecipeDef ParentName="ROCKET_SimpleMedalRecipeBase">
+		<defName>ROCKET_Recipe_MedicalService</defName>
+		<label>craft medical service medal</label>
+		<jobString>Crafting medical service medal.</jobString>
+		<products>
+			<ROCKET_Medal_MedicalService>1</ROCKET_Medal_MedicalService>
+		</products>
+	</RecipeDef>
+
+	<RecipeDef ParentName="ROCKET_SimpleMedalRecipeBase">
+		<defName>ROCKET_Recipe_ResearchService</defName>
+		<label>craft research service medal</label>
+		<jobString>Crafting research service medal.</jobString>
+		<products>
+			<ROCKET_Medal_ResearchService>1</ROCKET_Medal_ResearchService>
+		</products>
+	</RecipeDef>
+
+	<RecipeDef ParentName="ROCKET_SimpleMedalRecipeBase">
+		<defName>ROCKET_Recipe_LaborService</defName>
+		<label>craft labor service medal</label>
+		<jobString>Crafting labor service medal.</jobString>
+		<products>
+			<ROCKET_Medal_LaborService>1</ROCKET_Medal_LaborService>
+		</products>
+	</RecipeDef>
+
+	<RecipeDef ParentName="ROCKET_SimpleMedalRecipeBase">
+		<defName>ROCKET_Recipe_DesertCampaign</defName>
+		<label>craft desert campaign medal</label>
+		<jobString>Crafting desert campaign medal.</jobString>
+		<products>
+			<ROCKET_Medal_DesertCampaign>1</ROCKET_Medal_DesertCampaign>
+		</products>
+	</RecipeDef>
+	
+	<RecipeDef ParentName="ROCKET_SimpleMedalRecipeBase">
+		<defName>ROCKET_Recipe_SpaceCampaign</defName>
+		<label>craft space campaign medal</label>
+		<jobString>Crafting space campaign medal.</jobString>
+		<products>
+			<ROCKET_Medal_SpaceCampaign>1</ROCKET_Medal_SpaceCampaign>
+		</products>
+	</RecipeDef>
+
+	<RecipeDef ParentName="ROCKET_SimpleMedalRecipeBase">
+		<defName>ROCKET_Recipe_InsectoidCampaign</defName>
+		<label>craft insectoid campaign medal</label>
+		<jobString>Crafting insectoid campaign medal.</jobString>
+		<products>
+			<ROCKET_Medal_InsectoidCampaign>1</ROCKET_Medal_InsectoidCampaign>
+		</products>
+	</RecipeDef>
+
+	<RecipeDef ParentName="ROCKET_SimpleMedalRecipeBase">
+		<defName>ROCKET_Recipe_PolarCampaign</defName>
+		<label>craft polar campaign medal</label>
+		<jobString>Crafting polar campaign medal.</jobString>
+		<products>
+			<ROCKET_Medal_PolarCampaign>1</ROCKET_Medal_PolarCampaign>
+		</products>
+	</RecipeDef>
+
+	<!--  INTERMEDIATE RECIPES  -->
+
+	<RecipeDef ParentName="ROCKET_IntermediateMedalRecipeBase">
+		<defName>ROCKET_Recipe_PurpleHeart</defName>
+		<label>craft purple heart</label>
+		<jobString>Crafting purple heart.</jobString>
+		<products>
+			<ROCKET_Medal_PurpleHeart>1</ROCKET_Medal_PurpleHeart>
+		</products>
+	</RecipeDef>
+
+	<RecipeDef ParentName="ROCKET_IntermediateMedalRecipeBase">
+		<defName>ROCKET_Recipe_BronzeStar</defName>
+		<label>craft bronze star</label>
+		<jobString>Crafting bronze star.</jobString>
+		<products>
+			<ROCKET_Medal_BronzeStar>1</ROCKET_Medal_BronzeStar>
+		</products>
+	</RecipeDef>
+
+	<!--  ADVANCED RECIPES  -->
+
+	<RecipeDef ParentName="ROCKET_AdvancedMedalRecipeBase">
+		<defName>ROCKET_Recipe_DistinguishedService</defName>
+		<label>craft distinguished service medal</label>
+		<jobString>Crafting distinguished service medal.</jobString>
+		<products>
+			<ROCKET_Medal_DistinguishedService>1</ROCKET_Medal_DistinguishedService>
+		</products>
+	</RecipeDef>
+
+	<RecipeDef ParentName="ROCKET_AdvancedMedalRecipeBase">
+		<defName>ROCKET_Recipe_SilverStar</defName>
+		<label>craft silver star</label>
+		<jobString>Crafting silver star.</jobString>
+		<products>
+			<ROCKET_Medal_SilverStar>1</ROCKET_Medal_SilverStar>
+		</products>
+	</RecipeDef>
+
+	<!--  LEGENDARY RECIPES  -->
+
+	<RecipeDef ParentName="ROCKET_LegendaryMedalRecipeBase">
+		<defName>ROCKET_Recipe_RelicHunter</defName>
+		<label>craft relic hunter medallion</label>
+		<jobString>Crafting relic hunter medallion.</jobString>
+		<products>
+			<ROCKET_Medal_RelicHunter>1</ROCKET_Medal_RelicHunter>
+		</products>
+	</RecipeDef>
+
+	<RecipeDef ParentName="ROCKET_LegendaryMedalRecipeBase">
+		<defName>ROCKET_Recipe_GoldCross</defName>
+		<label>craft gold cross</label>
+		<jobString>Crafting gold cross.</jobString>
+		<products>
+			<ROCKET_Medal_GoldCross>1</ROCKET_Medal_GoldCross>
+		</products>
+	</RecipeDef>
+
+</Defs>

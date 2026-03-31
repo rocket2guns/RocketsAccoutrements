@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+	<TraitDef>
+		<defName>ROCKET_Decorated</defName>
+		<commonality>0</commonality>
+		<degreeDatas>
+			<li>
+				<label>decorated</label>
+				<description>[PAWN_nameDef] has been recognized for distinguished service. [PAWN_possessive] bearing reflects the quiet confidence of someone who has proven themselves under pressure.</description>
+				<degree>0</degree>
+				<statOffsets>
+					<SocialImpact>0.1</SocialImpact>
+					<MentalBreakThreshold>-0.05</MentalBreakThreshold>
+				</statOffsets>
+			</li>
+			<li>
+				<label>honored</label>
+				<description>[PAWN_nameDef] has been recognized many times for exceptional service. [PAWN_possessive] reputation precedes [PAWN_objective], and others in the colony look to [PAWN_objective] for strength in difficult times.</description>
+				<degree>1</degree>
+				<statOffsets>
+					<SocialImpact>0.2</SocialImpact>
+					<MentalBreakThreshold>-0.1</MentalBreakThreshold>
+				</statOffsets>
+			</li>
+			<li>
+				<label>exalted</label>
+				<description>[PAWN_nameDef] stands among the most celebrated figures the colony has ever known. [PAWN_possessive] name carries weight, and [PAWN_possessive] presence alone is enough to steady the nerves of those around [PAWN_objective].</description>
+				<degree>2</degree>
+				<statOffsets>
+					<SocialImpact>0.3</SocialImpact>
+					<MentalBreakThreshold>-0.15</MentalBreakThreshold>
+					<NegotiationAbility>0.02</NegotiationAbility>
+				</statOffsets>
+			</li>
+		</degreeDatas>
+	</TraitDef>
+</Defs>

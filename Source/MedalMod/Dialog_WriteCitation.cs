@@ -10,6 +10,8 @@ public class Dialog_WriteCitation : Window
     private const int MAX_LENGTH = 300;
     private const float MEDAL_COLUMN_WIDTH = 160f;
     private const float ICON_SIZE = 160f;
+    private const float BUTTON_HEIGHT = 35f;
+    private const float BUTTON_AREA_HEIGHT = BUTTON_HEIGHT + 10f;
 
     public Dialog_WriteCitation(RocketMedal medal)
     {
@@ -22,7 +24,7 @@ public class Dialog_WriteCitation : Window
         closeOnClickedOutside = false;
     }
 
-    public override Vector2 InitialSize => new(600f, 380f);
+    public override Vector2 InitialSize => new(600f, 400f);
 
     public override void DoWindowContents(Rect inRect)
     {
@@ -61,12 +63,32 @@ public class Dialog_WriteCitation : Window
         GUI.color = Color.gray;
         Widgets.Label(descRect, desc);
         GUI.color = Color.white;
+        var statsY = descRect.yMax + 10f;
+        
+        var ext = medal.def.GetModExtension<MedalExtension>();
+        var honor = ext?.honorAwarded ?? 0;
+        if (ModsConfig.RoyaltyActive && honor > 0)
+        {
+            GUI.color = Dialog_MedalAwarded.GoldColor;
+            var iconSize = 14f;
+            var gap = 4f;
+            var lineRect = new Rect(rect.x + 5f, statsY, rect.width - 10f, 18f);
+            var labelText = $"honor +{honor}";
+            var textWidth = Text.CalcSize(labelText).x;
+            var totalWidth = iconSize + gap + textWidth;
+            var startX = lineRect.x + (lineRect.width - totalWidth) / 2f;
+            var centerY = lineRect.y + (lineRect.height - iconSize) / 2f;
+            if (MedalTextures.HonorIcon != null)
+                GUI.DrawTexture(new Rect(startX, centerY, iconSize, iconSize), MedalTextures.HonorIcon);
+            Widgets.Label(new Rect(startX + iconSize + gap, lineRect.y, textWidth, lineRect.height), labelText);
+            statsY += 18f + 6f;
+            GUI.color = Color.white;
+        }
 
         // Stat bonuses
         var offsets = medal.def.equippedStatOffsets;
         if (offsets is { Count: > 0 })
         {
-            var statsY = descRect.yMax + 10f;
             GUI.color = new Color(0.5f, 0.8f, 0.5f);
             foreach (var mod in offsets)
             {
@@ -98,14 +120,15 @@ public class Dialog_WriteCitation : Window
         Widgets.Label(instrRect, "ROCKET_WriteCitationDesc".Translate());
         GUI.color = Color.white;
 
-        // Text area
+        // Text area — fills all space between instructions and the button row
         Text.Font = GameFont.Small;
-        var textRect = new Rect(rect.x, instrRect.yMax + 8f, rect.width, 150f);
+        var btnY = rect.yMax - BUTTON_AREA_HEIGHT;
+        var textRect = new Rect(rect.x, instrRect.yMax + 8f, rect.width, btnY - instrRect.yMax - 8f - 28f);
         draft = Widgets.TextArea(textRect, draft);
         if (draft.Length > MAX_LENGTH)
             draft = draft.Substring(0, MAX_LENGTH);
 
-        // Character count
+        // Character count — sits just above the buttons
         var countColor = draft.Length > MAX_LENGTH - 30 ? Color.yellow : Color.gray;
         GUI.color = countColor;
         Text.Font = GameFont.Tiny;
@@ -115,18 +138,17 @@ public class Dialog_WriteCitation : Window
         Text.Anchor = TextAnchor.UpperLeft;
         GUI.color = Color.white;
 
-        // Buttons
+        // Buttons — anchored to bottom of column
         Text.Font = GameFont.Small;
-        var btnY = textRect.yMax + 28f;
         var btnWidth = (rect.width - 10f) / 2f;
 
-        if (Widgets.ButtonText(new Rect(rect.x, btnY, btnWidth, 35f), "ROCKET_ConfirmButton".Translate()))
+        if (Widgets.ButtonText(new Rect(rect.x, btnY, btnWidth, BUTTON_HEIGHT), "ROCKET_ConfirmButton".Translate()))
         {
             medal.citation = draft.NullOrEmpty() ? null : draft.Trim();
             Close();
         }
 
-        if (Widgets.ButtonText(new Rect(rect.x + btnWidth + 10f, btnY, btnWidth, 35f), "ROCKET_ClearButton".Translate()))
+        if (Widgets.ButtonText(new Rect(rect.x + btnWidth + 10f, btnY, btnWidth, BUTTON_HEIGHT), "ROCKET_ClearButton".Translate()))
         {
             draft = "";
         }

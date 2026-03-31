@@ -20,6 +20,17 @@ namespace MedalMod
         
         public static readonly Texture2D LockedIcon = ContentFinder<Texture2D>.Get("UI/Locked");
         public static readonly Texture2D UnlockedIcon = ContentFinder<Texture2D>.Get("UI/Unlocked");
+        public static readonly Texture2D HonorIcon = ContentFinder<Texture2D>.Get("UI/Icons/RoyalFavor");
+    }
+    
+    public class MainButtonWorker_MedalCatalog : MainButtonWorker
+    {
+        public override bool Visible => MedalMod.Settings.ShowMedalCatalog;
+
+        public override void Activate()
+        {
+            Find.WindowStack.Add(new Dialog_MedalCatalog());
+        }
     }
     
 
@@ -45,6 +56,7 @@ namespace MedalMod
 
     public class MedalExtension : DefModExtension
     {
+        public int honorAwarded = 0;
         public List<MedalDynamicTrait> addsTraits;
         public List<MedalDynamicTrait> removesTraits;
     }
@@ -79,6 +91,11 @@ namespace MedalMod
                 "If enabled, once a medal is awarded to a pawn, it will default to being locked to the pawn inventory. This can be toggled individually on the dedicated tab. This setting does not affect biocoding."
             );
             listing.CheckboxLabeled(
+                "Show Medal Catalog Button", 
+                ref Settings.ShowMedalCatalog, 
+                "If enabled, a menu button will show to open a catalog of all medals in the game, including those added by mods. The catalog shows stats and effects of each medal."
+            );
+            listing.CheckboxLabeled(
                 "Draw Medals on Pawns", 
                 ref Settings.DrawMedalsOnPawns, 
                 "If enabled, medals will be rendered on pawns. Disabling this will stop medals being drawn on pawns. Use this to turn their rendering off."
@@ -100,6 +117,20 @@ namespace MedalMod
             listing.End();
             base.DoSettingsWindowContents(inRect);
         }
+        
+        
+        public static bool CheckRitualStatus(Pawn pawn)
+        {
+            if (pawn.GetLord()?.LordJob is LordJob_Ritual ritual)
+            {
+                var role = ritual.RoleFor(pawn);
+                Log.Message($"{pawn.LabelShort} is part of the {ritual.RitualLabel} ritual.");
+                if (role != null)
+                    return true;
+            }
+
+            return false;
+        }
     }
     
     public class MedalModSettings : ModSettings
@@ -112,6 +143,7 @@ namespace MedalMod
         public bool PromptForCitationDuringRitual = true;
         public float MedalScale = 0.8f;
         public int MaxDisplayedMedals = 9;
+        public bool ShowMedalCatalog = true;
 
         // This method saves and loads the setting
         public override void ExposeData()
@@ -124,6 +156,7 @@ namespace MedalMod
             Scribe_Values.Look(ref PromptForCitationDuringRitual, "PromptForCitationDuringRitual", true);
             Scribe_Values.Look(ref MedalDynamicTraits, "MedalDynamicTraits", true);
             Scribe_Values.Look(ref MedalScale, "MedalScale", 0.8f);
+            Scribe_Values.Look(ref ShowMedalCatalog, "ShowMedalCatalog", true);
         }
     }
     
@@ -279,6 +312,10 @@ namespace MedalMod
                     pawn.needs?.mood?.thoughts.memories.TryGainMemory(spectatorThought);
                 }
             }
+            
+            var ext = medal.def.GetModExtension<MedalExtension>();
+            if (ext is not null && ModsConfig.RoyaltyActive && Faction.OfEmpire != null) 
+                awardee.royalty.GainFavor(Faction.OfEmpire, ext.honorAwarded);
 
             if (MedalMod.Settings.MedalDynamicTraits)
             {
@@ -323,7 +360,6 @@ namespace MedalMod
                     }
                 }
 
-                var ext = medal.def.GetModExtension<MedalExtension>();
                 if (ext?.removesTraits != null)
                 {
                     foreach (var entry in ext.removesTraits)
@@ -556,21 +592,29 @@ namespace MedalMod
         }
     }
     
+    [HarmonyPatch(typeof(ApparelUtility), nameof(ApparelUtility.HasPartsToWear))]
+    public static class Patch_ApparelUtility_HasPartsToWear
+    {
+        public static void Postfix(Pawn p, ThingDef apparel, ref bool __result)
+        {
+            // If the base game already decided they can't wear it, skip
+            if (!__result) return;
+
+            // Check if the item is a Rank
+            if (typeof(RocketMedal).IsAssignableFrom(apparel.thingClass))
+            {
+                // If they don't meet the requirement, they physically "cannot" wear it
+                if (MedalMod.Settings.MedalsRequireCeremony && !MedalMod.CheckRitualStatus(p))
+                {
+                    __result = false;
+                }
+            }
+        }
+    }
+    
     [HarmonyPatch(typeof(Pawn_ApparelTracker), nameof(Pawn_ApparelTracker.Wear))]
     public static class PatchMedalBiocodeManual
     {
-        public static bool CheckRitualStatus(Pawn pawn)
-        {
-            if (pawn.GetLord()?.LordJob is LordJob_Ritual ritual)
-            {
-                var role = ritual.RoleFor(pawn);
-                Log.Message($"{pawn.LabelShort} is part of the {ritual.RitualLabel} ritual.");
-                if (role != null)
-                    return true;
-            }
-
-            return false;
-        }
         
         public static bool Prefix(Pawn_ApparelTracker __instance, Apparel newApparel)
         {
@@ -578,7 +622,7 @@ namespace MedalMod
             var comp = medal.BiocodeComp;
             if (comp == null) return true;
 
-            if (MedalMod.Settings.MedalsRequireCeremony && !CheckRitualStatus(__instance.pawn) && !comp.Biocoded)
+            if (MedalMod.Settings.MedalsRequireCeremony && !MedalMod.CheckRitualStatus(__instance.pawn) && !comp.Biocoded)
             {
                 Messages.Message($"ROCKET_FailMedalNeedsCeremony".Translate(), MessageTypeDefOf.RejectInput, false);
                 return false;

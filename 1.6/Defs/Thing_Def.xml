@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+	<ApparelLayerDef>
+		<defName>ROCKET_MedalLayer</defName>
+		<label>medals</label>
+		<drawOrder>350</drawOrder>
+	</ApparelLayerDef>
+
+	<!--  BASE  -->
+
+	<ThingDef ParentName="ApparelBase" Name="ROCKET_MedalBase" Abstract="True">
+		<thingClass>MedalMod.RocketMedal</thingClass>
+		<smeltable>false</smeltable>
+		<inspectorTabs>
+			<li>MedalMod.ITab_MedalRecord</li>
+		</inspectorTabs>
+		<comps Inherit="False">
+			<li Class="CompProperties_Forbiddable"/>
+			<li Class="CompProperties_Biocodable"/>
+		</comps>
+		<graphicData>
+			<graphicClass>Graphic_Single</graphicClass>
+			<shaderType>CutoutComplex</shaderType>
+			<drawSize>0.75</drawSize>
+		</graphicData>
+		<equippedStatOffsets>
+			<PawnBeauty>0.1</PawnBeauty>
+		</equippedStatOffsets>
+		<statBases>
+			<MaxHitPoints>500</MaxHitPoints>
+			<WorkToMake>10000</WorkToMake>
+			<Mass>0.01</Mass>
+			<EquipDelay>0.5</EquipDelay>
+			<DeteriorationRate>0</DeteriorationRate>
+			<Bulk MayRequire="CETeam.CombatExtended">0.1</Bulk>
+			<WornBulk MayRequire="CETeam.CombatExtended">0</WornBulk>
+		</statBases>
+		<thingCategories Inherit="False">
+			<li>ROCKET_Apparel_Medals</li>
+		</thingCategories>
+		<apparel>
+			<countsAsClothingForNudity>false</countsAsClothingForNudity>
+			<layers>
+				<li>ROCKET_MedalLayer</li>
+			</layers>
+			<bodyPartGroups>
+				<li>Torso</li>
+			</bodyPartGroups>
+		</apparel>
+	</ThingDef>
+
+	<!--  TIER BASES  -->
+
+	<ThingDef ParentName="ROCKET_MedalBase" Name="ROCKET_SimpleMedalBase" Abstract="True">
+		<statBases>
+			<MarketValue>500</MarketValue>
+		</statBases>
+	</ThingDef>
+
+	<ThingDef ParentName="ROCKET_MedalBase" Name="ROCKET_IntermediateMedalBase" Abstract="True">
+		<statBases>
+			<MarketValue>700</MarketValue>
+		</statBases>
+	</ThingDef>
+
+	<ThingDef ParentName="ROCKET_MedalBase" Name="ROCKET_AdvancedMedalBase" Abstract="True">
+		<statBases>
+			<MarketValue>1000</MarketValue>
+		</statBases>
+	</ThingDef>
+
+	<ThingDef ParentName="ROCKET_MedalBase" Name="ROCKET_LegendaryMedalBase" Abstract="True">
+		<statBases>
+			<MarketValue>2500</MarketValue>
+		</statBases>
+	</ThingDef>
+
+	<!--  SIMPLE MEDALS  -->
+
+	<ThingDef ParentName="ROCKET_SimpleMedalBase">
+		<defName>ROCKET_Medal_MedicalService</defName>
+		<label>medical service medal</label>
+		<description>Awarded for those who have distinguished themselves serving in the medical field.</description>
+		<graphicData>
+			<texPath>Things/Medals/MedicalService</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/MedicalService</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<MedicalSurgerySuccessChance>0.05</MedicalSurgerySuccessChance>
+			<MedicalTendQuality>0.08</MedicalTendQuality>
+		</equippedStatOffsets>
+		<uiOrder>20</uiOrder>
+	</ThingDef>
+
+	<ThingDef ParentName="ROCKET_SimpleMedalBase">
+		<defName>ROCKET_Medal_ResearchService</defName>
+		<label>research service medal</label>
+		<description>Awarded for those who have distinguished themselves serving in the research fields.</description>
+		<graphicData>
+			<texPath>Things/Medals/ResearchService</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/ResearchService</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<ResearchSpeed>0.05</ResearchSpeed>
+			<DrugCookingSpeed>0.05</DrugCookingSpeed>
+		</equippedStatOffsets>
+		<uiOrder>20</uiOrder>
+	</ThingDef>
+
+	<ThingDef ParentName="ROCKET_SimpleMedalBase">
+		<defName>ROCKET_Medal_LaborService</defName>
+		<label>labor service medal</label>
+		<description>Awarded for those who have distinguished themselves serving in the support fields.</description>
+		<graphicData>
+			<texPath>Things/Medals/LaborService</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/LaborService</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<WorkSpeedGlobal>0.06</WorkSpeedGlobal>
+		</equippedStatOffsets>
+		<uiOrder>20</uiOrder>
+	</ThingDef>
+
+	<ThingDef ParentName="ROCKET_SimpleMedalBase">
+		<defName>ROCKET_Medal_DesertCampaign</defName>
+		<label>desert campaign medal</label>
+		<description>Awarded for honorable service in desert operations.</description>
+		<graphicData>
+			<texPath>Things/Medals/DesertCampaign</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/DesertCampaign</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<ComfyTemperatureMax>2</ComfyTemperatureMax>
+		</equippedStatOffsets>
+		<uiOrder>21</uiOrder>
+	</ThingDef>
+
+	<ThingDef ParentName="ROCKET_SimpleMedalBase">
+		<defName>ROCKET_Medal_SpaceCampaign</defName>
+		<label>space campaign medal</label>
+		<description>Awarded for honorable service in space operations.</description>
+		<graphicData>
+			<texPath>Things/Medals/SpaceCampaign</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/SpaceCampaign</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<VacuumResistance MayRequire="Ludeon.RimWorld.Odyssey">0.02</VacuumResistance>
+		</equippedStatOffsets>
+		<uiOrder>21</uiOrder>
+	</ThingDef>
+
+	<ThingDef ParentName="ROCKET_SimpleMedalBase">
+		<defName>ROCKET_Medal_InsectoidCampaign</defName>
+		<label>insectoid campaign medal</label>
+		<description>Awarded for honorable service in insectoid operations.</description>
+		<graphicData>
+			<texPath>Things/Medals/InsectoidCampaign</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/InsectoidCampaign</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<ToxicResistance>0.02</ToxicResistance>
+			<ToxicEnvironmentResistance>0.01</ToxicEnvironmentResistance>
+		</equippedStatOffsets>
+		<uiOrder>21</uiOrder>
+	</ThingDef>
+
+	<ThingDef ParentName="ROCKET_SimpleMedalBase">
+		<defName>ROCKET_Medal_PolarCampaign</defName>
+		<label>polar campaign medal</label>
+		<description>Awarded for honorable service in polar operations.</description>
+		<graphicData>
+			<texPath>Things/Medals/PolarCampaign</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/PolarCampaign</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<ComfyTemperatureMin>-2</ComfyTemperatureMin>
+			<CarryingCapacity>5</CarryingCapacity>
+		</equippedStatOffsets>
+		<uiOrder>21</uiOrder>
+	</ThingDef>
+
+	<!--  INTERMEDIATE MEDALS  -->
+
+	<ThingDef ParentName="ROCKET_IntermediateMedalBase">
+		<defName>ROCKET_Medal_PurpleHeart</defName>
+		<label>purple heart</label>
+		<description>Awarded for serious injuries while in service.</description>
+		<graphicData>
+			<texPath>Things/Medals/PurpleHeart</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/PurpleHeart</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<PainShockThreshold>0.02</PainShockThreshold>
+		</equippedStatOffsets>
+		<modExtensions>
+			<li Class="MedalMod.MedalExtension">
+				<removesTraits>
+					<li>
+						<trait>Delicate</trait>
+						<degree>0</degree>
+						<chance>0.1</chance>
+					</li>
+				</removesTraits>
+				<addsTraits>
+					<li>
+						<trait>Tough</trait>
+						<degree>0</degree>
+						<chance>0.1</chance>
+					</li>
+				</addsTraits>
+			</li>
+		</modExtensions>
+		<uiOrder>22</uiOrder>
+	</ThingDef>
+
+	<ThingDef ParentName="ROCKET_IntermediateMedalBase">
+		<defName>ROCKET_Medal_BronzeStar</defName>
+		<label>bronze star</label>
+		<description>A bronze star awarded for bravery.</description>
+		<graphicData>
+			<texPath>Things/Medals/BronzeStar</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/BronzeStar</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<PainShockThreshold>0.02</PainShockThreshold>
+		</equippedStatOffsets>
+		<modExtensions>
+			<li Class="MedalMod.MedalExtension">
+				<removesTraits>
+					<li>
+						<trait>Nerves</trait>
+						<degree>-1</degree> <!-- Volatile -->
+						<chance>0.1</chance>
+					</li>
+				</removesTraits>
+				<addsTraits>
+					<li>
+						<trait>Nerves</trait>
+						<degree>1</degree> <!-- Steady -->
+						<chance>0.05</chance>
+					</li>
+				</addsTraits>
+			</li>
+		</modExtensions>
+		<uiOrder>23</uiOrder>
+	</ThingDef>
+
+	<!--  ADVANCED MEDALS  -->
+
+	<ThingDef ParentName="ROCKET_AdvancedMedalBase">
+		<defName>ROCKET_Medal_DistinguishedService</defName>
+		<label>distinguished service medal</label>
+		<description>A service medal awarded for those who have distinguished themselves.</description>
+		<graphicData>
+			<texPath>Things/Medals/DistinguishedService</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/DistinguishedService</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<GeneralLaborSpeed>0.03</GeneralLaborSpeed>
+			<SocialImpact>0.03</SocialImpact>
+		</equippedStatOffsets>
+		<modExtensions>
+			<li Class="MedalMod.MedalExtension">
+				<addsTraits>
+					<li>
+						<trait>Greedy</trait>
+						<degree>0</degree>
+						<chance>0.1</chance>
+					</li>
+					<li>
+						<trait>Jealous</trait>
+						<degree>0</degree>
+						<chance>0.1</chance>
+					</li>
+				</addsTraits>
+			</li>
+		</modExtensions>
+		<uiOrder>25</uiOrder>
+	</ThingDef>
+
+	<ThingDef ParentName="ROCKET_AdvancedMedalBase">
+		<defName>ROCKET_Medal_SilverStar</defName>
+		<label>silver star</label>
+		<description>A silver emblazened star awarded for extreme bravery.</description>
+		<graphicData>
+			<texPath>Things/Medals/SilverStar</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/SilverStar</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<PainShockThreshold>0.03</PainShockThreshold>
+		</equippedStatOffsets>
+		<modExtensions>
+			<li Class="MedalMod.MedalExtension">
+				<removesTraits>
+					<li>
+						<trait>Nerves</trait>
+						<degree>-1</degree> <!-- Volatile -->
+						<chance>0.2</chance>
+					</li>
+				</removesTraits>
+				<addsTraits>
+					<li>
+						<trait>Nerves</trait>
+						<degree>1</degree> <!-- Steady -->
+						<chance>0.1</chance>
+					</li>
+				</addsTraits>
+			</li>
+		</modExtensions>
+		<uiOrder>24</uiOrder>
+	</ThingDef>
+
+	<!--  LEGENDARY MEDALS  -->
+
+	<ThingDef ParentName="ROCKET_LegendaryMedalBase">
+		<defName>ROCKET_Medal_RelicHunter</defName>
+		<label>relic hunter medallion</label>
+		<description>Awarded to those who have sought the greatest relics of the world.</description>
+		<graphicData>
+			<texPath>Things/Medals/RelicHunter</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/RelicHunter</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<EntityStudyRate MayRequire="Ludeon.RimWorld.Anomaly">0.1</EntityStudyRate>
+			<MeditationFocusGain MayRequire="Ludeon.RimWorld.Royalty">0.05</MeditationFocusGain>
+		</equippedStatOffsets>
+		<modExtensions>
+			<li Class="MedalMod.MedalExtension">
+				<honorAwarded>4</honorAwarded>
+			</li>
+		</modExtensions>
+		<uiOrder>26</uiOrder>
+	</ThingDef>
+
+	<ThingDef ParentName="ROCKET_LegendaryMedalBase">
+		<defName>ROCKET_Medal_GoldCross</defName>
+		<label>gold cross</label>
+		<description>The highest bravery honor, featuring a gold cross.</description>
+		<graphicData>
+			<texPath>Things/Medals/GoldCross</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/GoldCross</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<SocialImpact>0.1</SocialImpact>
+			<PainShockThreshold>0.05</PainShockThreshold>
+		</equippedStatOffsets>
+		<modExtensions>
+			<li Class="MedalMod.MedalExtension">
+				<honorAwarded>6</honorAwarded>
+				<removesTraits>
+					<li>
+						<trait>Nerves</trait>
+						<degree>-1</degree> <!-- Volatile -->
+						<chance>0.5</chance>
+					</li>
+				</removesTraits>
+				<addsTraits>
+					<li>
+						<trait>Nerves</trait>
+						<degree>2</degree> <!-- Iron-Willed -->
+						<chance>0.1</chance>
+					</li>
+				</addsTraits>
+			</li>
+		</modExtensions>
+		<uiOrder>27</uiOrder>
+	</ThingDef>
+
+</Defs>

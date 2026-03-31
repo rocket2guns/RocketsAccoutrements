@@ -21,4 +21,5 @@
 	<ROCKET_MedalAwardedTo>Awarded to {0}</ROCKET_MedalAwardedTo>
 	<ROCKET_MustBeLeaderOrGuide>Must be the Leader or Moral Guide.</ROCKET_MustBeLeaderOrGuide>
 	<ROCKET_FailMedalNeedsCeremony>Medals can only be awarded via ceremonies</ROCKET_FailMedalNeedsCeremony>
+	<ROCKET_MedalCatalog>Medals</ROCKET_MedalCatalog>
 </LanguageData>

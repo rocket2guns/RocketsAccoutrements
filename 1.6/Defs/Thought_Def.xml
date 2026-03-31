@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+	<ThoughtDef>
+		<defName>ROCKET_AwardedMedal_Thought</defName>
+		<durationDays>15</durationDays>
+		<stages>
+			<li>
+				<label>poor medal ceremony</label>
+				<description>I was given a medal, but the ceremony was underwhelming. Barely anyone showed up.</description>
+				<baseMoodEffect>4</baseMoodEffect>
+			</li>
+			<li>
+				<label>awarded a medal</label>
+				<description>I was recognized for my service. It was a decent ceremony.</description>
+				<baseMoodEffect>8</baseMoodEffect>
+			</li>
+			<li>
+				<label>grand medal ceremony</label>
+				<description>I was recognized for my service before the whole colony. It is an honor to wear this.</description>
+				<baseMoodEffect>14</baseMoodEffect>
+			</li>
+			<li>
+				<label>legendary medal ceremony</label>
+				<description>The entire colony gathered to honor me. I will never forget this moment.</description>
+				<baseMoodEffect>20</baseMoodEffect>
+			</li>
+		</stages>
+	</ThoughtDef>
+	
+	<ThoughtDef>
+		<defName>ROCKET_WitnessedMedalCeremony_Thought</defName>
+		<durationDays>5</durationDays>
+		<stages>
+			<li>
+				<label>witnessed medal ceremony</label>
+				<description>I watched one of our own be honored for their service. It was moving.</description>
+				<baseMoodEffect>3</baseMoodEffect>
+			</li>
+		</stages>
+	</ThoughtDef>
+</Defs>

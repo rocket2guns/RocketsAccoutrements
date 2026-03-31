@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+	<MainButtonDef>
+		<defName>ROCKET_MedalCatalog</defName>
+		<label>medals</label>
+		<description>View all medals that can be awarded.</description>
+		<workerClass>MedalMod.MainButtonWorker_MedalCatalog</workerClass>
+		<order>192</order>
+		<iconPath>UI/IconMedals</iconPath>
+		<minimized>True</minimized>
+	</MainButtonDef>
+</Defs>

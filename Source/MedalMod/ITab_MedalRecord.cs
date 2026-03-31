@@ -115,6 +115,26 @@ public class ITab_MedalRecord : ITab
             curY += citationHeight + 12f;
         }
 
+        // honor bonus, gold, centered
+        var ext = medal.def.GetModExtension<MedalExtension>();
+        var honor = ext?.honorAwarded ?? 0;
+        if (ModsConfig.RoyaltyActive && honor > 0)
+        {
+            Text.Font = GameFont.Tiny;
+            GUI.color = GoldColor;
+            Text.Anchor = TextAnchor.MiddleCenter;
+            var crownSize = 14f;
+            var totalWidth = crownSize + 4f + Text.CalcSize($"honor +{honor}").x;
+            var startX = rect.x + (rect.width - totalWidth) / 2f;
+            if (MedalTextures.HonorIcon != null)
+                GUI.DrawTexture(new Rect(startX, curY + 5f, crownSize, crownSize), MedalTextures.HonorIcon);
+            Widgets.Label(new Rect(startX + crownSize + 4f, curY, totalWidth - crownSize - 4f, 24f), $"honor +{honor}");
+            curY += 8f + 24f;
+            GUI.color = Color.white;
+            Text.Font = GameFont.Small;
+            Text.Anchor = TextAnchor.UpperLeft;
+        }
+        
         // Stat bonuses, green, centered
         var statOffsets = medal.def.equippedStatOffsets;
         if (statOffsets is { Count: > 0 })
@@ -138,7 +158,6 @@ public class ITab_MedalRecord : ITab
         if (MedalMod.Settings.MedalDynamicTraits && medal.BiocodeComp is not { Biocoded: true })
         {
             Text.Font = GameFont.Tiny;
-            var ext = medal.def.GetModExtension<MedalExtension>();
             if (ext != null && ((ext.removesTraits is { Count: > 0 }) || (ext.addsTraits is { Count: > 0 })))
             {
                 Text.Anchor = TextAnchor.MiddleCenter;

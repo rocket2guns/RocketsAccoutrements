@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+	<RitualOutcomeEffectDef>
+		<defName>ROCKET_AwardMedalOutcome</defName>
+		<description>The medal is awarded to the colonist.</description>
+		<workerClass>MedalMod.RitualOutcomeEffectWorkerAwardMedal</workerClass>
+		<comps>
+			<li Class="MedalMod.RitualOutcomeComp_MedalPreview"/>
+			<li Class="MedalMod.RitualOutcomeComp_CeremonyAttendance"/>
+			<li Class="MedalMod.RitualOutcomeComp_CeremonyRoom"/>
+			<li Class="MedalMod.RitualOutcomeComp_CeremonyCitation"/>
+		</comps>
+	</RitualOutcomeEffectDef>
+	
+	<PreceptDef>
+		<defName>ROCKET_MedalCeremonyPrecept</defName>
+		<issue>Ritual</issue>
+		<label>award ceremony</label>
+		<description>An official ceremony to bestow a medal upon a deserving colonist.</description>
+		<preceptClass>Precept_Ritual</preceptClass>
+		<ritualPatternBase>ROCKET_AwardMedalPattern</ritualPatternBase>
+		<visible>false</visible>
+		<countsTowardsPreceptLimit>false</countsTowardsPreceptLimit>
+	</PreceptDef>
+	
+	<DutyDef>
+		<defName>SpeakOnCellAward</defName>
+		<hook>HighPriority</hook>
+		<socialModeMax>Off</socialModeMax>
+		<ritualSpectateTarget>true</ritualSpectateTarget>
+		<thinkNode Class="ThinkNode_Priority">
+			<subNodes>
+				<!-- Goto my spot -->
+				<li Class="JobGiver_GotoTravelDestination">
+					<exactCell>true</exactCell>
+					<locomotionUrgency>Jog</locomotionUrgency>
+					<ritualTagOnArrival>Arrived</ritualTagOnArrival>
+				</li>
+
+				<!-- Arrived -->
+				<li Class="ThinkNode_ConditionalAtDutyLocation">
+					<subNodes>
+						<li Class="MedalMod.JobGiver_AwardSpeech">
+							<soundDefMale>Speech_Funeral_Male</soundDefMale>
+							<soundDefFemale>Speech_Funeral_Female</soundDefFemale>
+						</li>
+					</subNodes>
+				</li>
+			</subNodes>
+		</thinkNode>
+	</DutyDef>
+	
+	<RitualBehaviorDef>
+		<defName>ROCKET_AwardMedalBehavior</defName>
+		<durationTicks>5000</durationTicks>
+		<spectatorsLabel>Spectators</spectatorsLabel>
+		<spectatorGerund>spectate</spectatorGerund>
+		<roles>
+			<li Class="MedalMod.RitualRole_Presenter">
+				<label>presenter</label>
+				<id>leader</id>
+				<required>True</required>
+				<maxCount>1</maxCount>
+				<countsAsParticipant>False</countsAsParticipant>
+				<allowChild>false</allowChild>
+				<mustBeAbleToReachTarget>True</mustBeAbleToReachTarget>
+			</li>
+			<li Class="RitualRoleColonist">
+				<id>awardee</id>
+				<label>Awardee</label>
+				<required>True</required>
+				<maxCount>1</maxCount>
+				<countsAsParticipant>False</countsAsParticipant>
+				<mustBeAbleToReachTarget>True</mustBeAbleToReachTarget>
+			</li>
+		</roles>
+		<stages>
+			<li>
+				<defaultDuty>Spectate</defaultDuty>
+				<allowedSpectateSidesOverride>Vertical</allowedSpectateSidesOverride>
+				<spectateDistanceOverride>1</spectateDistanceOverride>
+				<spectatorsRequired>false</spectatorsRequired>
+				<endTriggers>
+					<li Class="StageEndTrigger_RolesArrived">
+						<roleIds>
+							<li>leader</li>
+							<li>awardee</li>
+						</roleIds>
+					</li>
+				</endTriggers>
+				<roleBehaviors>
+					<li>
+						<roleId>leader</roleId>
+						<dutyDef>ArriveToCell</dutyDef>
+						<customPositions>
+							<li Class="RitualPosition_BehindThingCenter"/>
+						</customPositions>
+					</li>
+					<li>
+						<roleId>awardee</roleId>
+						<dutyDef>ArriveToCell</dutyDef>
+						<customPositions>
+							<li Class="RitualPosition_InFrontThingCenter"/>
+						</customPositions>
+					</li>
+				</roleBehaviors>
+				<preAction Class="MedalMod.RitualStageAction_StartBestowal"/>
+				<highlightRolePawns>
+					<li>awardee</li>
+					<li>leader</li>
+				</highlightRolePawns>
+			</li>
+			<li>
+				<defaultDuty>Spectate</defaultDuty>
+				<allowedSpectateSidesOverride>Vertical</allowedSpectateSidesOverride>
+				<spectateDistanceOverride>1</spectateDistanceOverride>
+				<spectatorsRequired>false</spectatorsRequired>
+				<endTriggers>
+					<li Class="StageEndTrigger_DurationPercentage">
+						<percentage>1</percentage>
+					</li>
+				</endTriggers>
+				<roleBehaviors>
+					<li>
+						<roleId>leader</roleId>
+						<dutyDef>SpeakOnCellAward</dutyDef>
+						<speakerInteraction>Speech_Leader</speakerInteraction>
+						<customPositions>
+							<li Class="RitualPosition_BesideThing"/>
+						</customPositions>
+					</li>
+				</roleBehaviors>
+				<visualEffectDef>Speech</visualEffectDef>
+			</li>
+		</stages>
+	</RitualBehaviorDef>
+	
+	<RitualPatternDef>
+		<defName>ROCKET_AwardMedalPattern</defName>
+		<ritualBehavior>ROCKET_AwardMedalBehavior</ritualBehavior>
+		<ritualOutcomeEffect>ROCKET_AwardMedalOutcome</ritualOutcomeEffect>
+		<ritualExpectedDesc>The colony's leader will bestow a medal upon a deserving colonist.</ritualExpectedDesc>
+	</RitualPatternDef>
+</Defs>
