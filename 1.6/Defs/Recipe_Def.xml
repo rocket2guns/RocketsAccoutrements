@@ -209,6 +209,15 @@
 		</products>
 	</RecipeDef>
 
+	<RecipeDef ParentName="ROCKET_SimpleMedalRecipeBase">
+		<defName>ROCKET_Recipe_MechanoidCampaign</defName>
+		<label>craft mechanoid campaign medal</label>
+		<jobString>Crafting mechanoid campaign medal.</jobString>
+		<products>
+			<ROCKET_Medal_MechanoidCampaign>1</ROCKET_Medal_MechanoidCampaign>
+		</products>
+	</RecipeDef>
+
 	<!--  INTERMEDIATE RECIPES  -->
 
 	<RecipeDef ParentName="ROCKET_IntermediateMedalRecipeBase">

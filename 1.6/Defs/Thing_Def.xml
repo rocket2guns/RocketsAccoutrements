@@ -194,6 +194,23 @@
 		<uiOrder>21</uiOrder>
 	</ThingDef>
 
+	<ThingDef ParentName="ROCKET_SimpleMedalBase">
+		<defName>ROCKET_Medal_MechanoidCampaign</defName>
+		<label>mechanoid campaign medal</label>
+		<description>Awarded for honorable service in counter mechanoid operations.</description>
+		<graphicData>
+			<texPath>Things/Medals/MechanoidCampaign</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/MechanoidCampaign</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<PsychicSensitivity>-0.05</PsychicSensitivity>
+			<ShootingAccuracyPawn>0.01</ShootingAccuracyPawn>
+		</equippedStatOffsets>
+		<uiOrder>21</uiOrder>
+	</ThingDef>
+
 	<!--  INTERMEDIATE MEDALS  -->
 
 	<ThingDef ParentName="ROCKET_IntermediateMedalBase">

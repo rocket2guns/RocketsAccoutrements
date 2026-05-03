@@ -121,15 +121,9 @@ namespace MedalMod
         
         public static bool CheckRitualStatus(Pawn pawn)
         {
-            if (pawn.GetLord()?.LordJob is LordJob_Ritual ritual)
-            {
-                var role = ritual.RoleFor(pawn);
-                Log.Message($"{pawn.LabelShort} is part of the {ritual.RitualLabel} ritual.");
-                if (role != null)
-                    return true;
-            }
-
-            return false;
+            if (pawn.GetLord()?.LordJob is not LordJob_Ritual ritual) return false;
+            var role = ritual.RoleFor(pawn);
+            return role != null;
         }
     }
     
@@ -453,6 +447,9 @@ namespace MedalMod
     
     public class JobGiver_AwardSpeech : JobGiver_GiveSpeechFacingTarget
     {
+        private static readonly AccessTools.FieldRef<InteractionDef, Texture2D> SymbolTexRef =
+            AccessTools.FieldRefAccess<InteractionDef, Texture2D>("symbolTex");
+
         protected override Job TryGiveJob(Pawn pawn)
         {
             LordJob_Ritual lordJob = pawn.GetLord()?.LordJob as LordJob_Ritual;
@@ -468,9 +465,9 @@ namespace MedalMod
             var interactDef = DefDatabase<InteractionDef>.GetNamedSilentFail("ROCKET_Speech_AwardMedal");
             if (interactDef != null && lordJob.selectedTarget.Thing is RocketMedal medal)
             {
-                var medalTexture = medal.def.uiIcon; 
-                if (medalTexture != null) 
-                    AccessTools.Field(typeof(InteractionDef), "symbolTex").SetValue(interactDef, medalTexture);
+                var medalTexture = medal.def.uiIcon;
+                if (medalTexture != null)
+                    SymbolTexRef(interactDef) = medalTexture;
             }
             job.interaction = interactDef;
             job.speechSoundMale = this.soundDefMale ?? SoundDefOf.Speech_Leader_Male;
@@ -483,30 +480,31 @@ namespace MedalMod
     public static class PatchSpeechGrammar
     {
 // Cache the private fields once when the game loads
-        private static readonly AccessTools.FieldRef<PlayLogEntry_InteractionWithMany, InteractionDef> IntDefRef = 
+        private static readonly AccessTools.FieldRef<PlayLogEntry_InteractionWithMany, InteractionDef> IntDefRef =
             AccessTools.FieldRefAccess<PlayLogEntry_InteractionWithMany, InteractionDef>("intDef");
-        
-        private static readonly AccessTools.FieldRef<PlayLogEntry_InteractionWithMany, Pawn> InitiatorRef = 
+
+        private static readonly AccessTools.FieldRef<PlayLogEntry_InteractionWithMany, Pawn> InitiatorRef =
             AccessTools.FieldRefAccess<PlayLogEntry_InteractionWithMany, Pawn>("initiator");
 
+        // Lazy-cached so we can reference-compare instead of string-comparing defName on every social log entry
+        private static InteractionDef _awardSpeechDef;
+
         public static MethodBase TargetMethod() => AccessTools.Method(typeof(PlayLogEntry_InteractionWithMany), "GenerateGrammarRequest");
-    
+
         public static void Postfix(Verse.LogEntry __instance, ref GrammarRequest __result)
         {
-            if (__instance is PlayLogEntry_InteractionWithMany manyLog)
-            {
-                // Instantly access the private fields with zero reflection cost
-                var intDef = IntDefRef(manyLog);
-                if (intDef is { defName: "ROCKET_Speech_AwardMedal" })
-                {
-                    var initiator = InitiatorRef(manyLog);
-                    var lordJob = initiator?.GetLord()?.LordJob as LordJob_Ritual;
-                    var awardee = lordJob?.assignments.FirstAssignedPawn("awardee");
-                    if (awardee == null) return;
-                    var rules = GrammarUtility.RulesForPawn("RECIPIENT", awardee, __result.Constants);
-                    __result.Rules.AddRange(rules);
-                }
-            }
+            if (__instance is not PlayLogEntry_InteractionWithMany manyLog) return;
+            var intDef = IntDefRef(manyLog);
+            if (intDef == null) return;
+            var awardDef = _awardSpeechDef ??= DefDatabase<InteractionDef>.GetNamedSilentFail("ROCKET_Speech_AwardMedal");
+            if (awardDef == null || intDef != awardDef) return;
+
+            var initiator = InitiatorRef(manyLog);
+            var lordJob = initiator?.GetLord()?.LordJob as LordJob_Ritual;
+            var awardee = lordJob?.assignments.FirstAssignedPawn("awardee");
+            if (awardee == null) return;
+            var rules = GrammarUtility.RulesForPawn("RECIPIENT", awardee, __result.Constants);
+            __result.Rules.AddRange(rules);
         }
     }
     
@@ -592,26 +590,6 @@ namespace MedalMod
         }
     }
     
-    [HarmonyPatch(typeof(ApparelUtility), nameof(ApparelUtility.HasPartsToWear))]
-    public static class Patch_ApparelUtility_HasPartsToWear
-    {
-        public static void Postfix(Pawn p, ThingDef apparel, ref bool __result)
-        {
-            // If the base game already decided they can't wear it, skip
-            if (!__result) return;
-
-            // Check if the item is a Rank
-            if (typeof(RocketMedal).IsAssignableFrom(apparel.thingClass))
-            {
-                // If they don't meet the requirement, they physically "cannot" wear it
-                if (MedalMod.Settings.MedalsRequireCeremony && !MedalMod.CheckRitualStatus(p))
-                {
-                    __result = false;
-                }
-            }
-        }
-    }
-    
     [HarmonyPatch(typeof(Pawn_ApparelTracker), nameof(Pawn_ApparelTracker.Wear))]
     public static class PatchMedalBiocodeManual
     {
@@ -682,29 +660,22 @@ namespace MedalMod
             }
             
             var worn = parms.pawn.apparel.WornApparel; // This is a List<Apparel>
-            var totalMedals = 0;
-            var myIndex = -1;
+            var maxDisplayed = MedalMod.Settings.MaxDisplayedMedals;
+            var myIndex = 0;
 
             for (var i = 0; i < worn.Count; i++)
             {
-                if (worn[i] is RocketMedal)
+                if (worn[i] is not RocketMedal) continue;
+                if (worn[i] == apparelNode)
                 {
-                    if (worn[i] == apparelNode)
-                        myIndex = totalMedals;
-            
-                    totalMedals++;
+                    if (myIndex >= maxDisplayed) __result = false;
+                    return;
                 }
-            }
-            if (myIndex == -1) return;
-
-            if (myIndex >= MedalMod.Settings.MaxDisplayedMedals)
-            {
-                __result = false;
-                return;
+                myIndex++;
             }
         }
     }
-    
+
     [HarmonyPatch(typeof(ApparelUtility), nameof(ApparelUtility.CanWearTogether))]
     public static class PatchMedalConflict
     {
@@ -811,50 +782,38 @@ namespace MedalMod
                 {
                     if (worn[i] == apparelNode.apparel)
                         myIndex = totalMedals;
-            
+
                     totalMedals++;
                 }
             }
             if (myIndex == -1) return;
 
-            var currentIndex = 0;
-            foreach (var a in worn)
-            {
-                if (a is not RocketMedal) continue;
-                
-                if (a == apparelNode.apparel)
-                {
-                    var reverseIndex = (totalMedals - 1) - currentIndex; 
+            var reverseIndex = (totalMedals - 1) - myIndex;
 
-                    var row = reverseIndex / maxMedalsPerRow; 
-                    var col = reverseIndex % maxMedalsPerRow; 
+            var row = reverseIndex / maxMedalsPerRow;
+            var col = reverseIndex % maxMedalsPerRow;
 
-                    var totalRows = (totalMedals + maxMedalsPerRow - 1) / maxMedalsPerRow;
-                    var medalsInThisRow = maxMedalsPerRow;
-                    
-                    // If we are looking at the very bottom row, check if it's partially empty
-                    if (row == totalRows - 1 && totalMedals % maxMedalsPerRow != 0) 
-                        medalsInThisRow = totalMedals % maxMedalsPerRow;
+            var totalRows = (totalMedals + maxMedalsPerRow - 1) / maxMedalsPerRow;
+            var medalsInThisRow = maxMedalsPerRow;
 
-                    // Shift the column to the right by half the missing width
-                    var missingMedals = maxMedalsPerRow - medalsInThisRow;
-                    var centeredCol = col + (missingMedals / 2f);
+            // If we are looking at the very bottom row, check if it's partially empty
+            if (row == totalRows - 1 && totalMedals % maxMedalsPerRow != 0)
+                medalsInThisRow = totalMedals % maxMedalsPerRow;
 
-                    // Apply X shift using our new 'centeredCol' instead of the raw 'col'
-                    var baseX = (parms.facing == Rot4.West || parms.facing == Rot4.East) ? 0 : BaseXOffset;
-                    var shiftX = baseX + (centeredCol * indexOffset);
-                    if (parms.facing == Rot4.West || parms.facing == Rot4.North)
-                        __result.x -= shiftX;
-                    else
-                        __result.x += shiftX;
-                        
-                    // Apply Z (Vertical) shift
-                    __result.z -= (row * RowZDrop * scale);
-                    
-                    break; 
-                }
-                currentIndex++;
-            }
+            // Shift the column to the right by half the missing width
+            var missingMedals = maxMedalsPerRow - medalsInThisRow;
+            var centeredCol = col + (missingMedals / 2f);
+
+            // Apply X shift using our new 'centeredCol' instead of the raw 'col'
+            var baseX = (parms.facing == Rot4.West || parms.facing == Rot4.East) ? 0 : BaseXOffset;
+            var shiftX = baseX + (centeredCol * indexOffset);
+            if (parms.facing == Rot4.West || parms.facing == Rot4.North)
+                __result.x -= shiftX;
+            else
+                __result.x += shiftX;
+
+            // Apply Z (Vertical) shift
+            __result.z -= (row * RowZDrop * scale);
         }
     }
 }
