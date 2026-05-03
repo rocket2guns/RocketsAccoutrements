@@ -44,14 +44,14 @@ public class Dialog_MedalAwarded : Window
         // Awarded to
         Text.Font = GameFont.Small;
         Text.Anchor = TextAnchor.MiddleCenter;
-        var awardLine = $"Awarded to {awardee.NameFullColored}";
+        var awardLine = "ROCKET_MedalAwardedTo".Translate(awardee.NameFullColored);
         var awardHeight = Text.CalcHeight(awardLine, inRect.width);
         Widgets.Label(new Rect(inRect.x, curY, inRect.width, awardHeight), awardLine);
         curY += awardHeight + 4f;
 
         // Presented by
         Text.Font = GameFont.Tiny;
-        var presenterLine = $"Presented by {presenter.NameFullColored}";
+        var presenterLine = "ROCKET_MedalPresentedBy".Translate(presenter.NameFullColored);
         var presenterHeight = Text.CalcHeight(presenterLine, inRect.width);
         Widgets.Label(new Rect(inRect.x, curY, inRect.width, presenterHeight), presenterLine);
         curY += presenterHeight + 10f;
@@ -133,7 +133,7 @@ public class Dialog_MedalAwarded : Window
         Text.Anchor = TextAnchor.UpperLeft;
         GUI.color = Color.white;
 
-        if (Widgets.ButtonText(new Rect(inRect.x + (inRect.width - 120f) / 2f, inRect.yMax - 45f, 120f, 35f), "Close"))
+        if (Widgets.ButtonText(new Rect(inRect.x + (inRect.width - 120f) / 2f, inRect.yMax - 45f, 120f, 35f), "ROCKET_CloseButton".Translate()))
             Close();
     }
 }

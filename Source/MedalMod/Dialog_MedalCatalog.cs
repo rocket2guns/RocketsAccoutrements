@@ -12,6 +12,11 @@ public class Dialog_MedalCatalog : Window
 {
     private Vector2 _scrollPosition;
     private List<ThingDef> _medals;
+    private HashSet<ThingDef> _locked;
+    private Dictionary<ThingDef, List<ResearchProjectDef>> _missingResearch;
+
+    // Cached across dialog openings — defs and their textures are stable for the session
+    private static readonly Dictionary<Texture, Texture2D> _grayscaleCache = new();
 
     private const float ICON_SIZE = 64f;
     private const float ROW_PADDING = 10f;
@@ -31,6 +36,61 @@ public class Dialog_MedalCatalog : Window
             .OrderBy(d => d.uiOrder)
             .ThenBy(d => d.label)
             .ToList();
+
+        _locked = new HashSet<ThingDef>();
+        _missingResearch = new Dictionary<ThingDef, List<ResearchProjectDef>>();
+        foreach (var def in _medals)
+        {
+            var missing = GetMissingResearch(def);
+            if (missing == null || missing.Count == 0) continue;
+            _locked.Add(def);
+            _missingResearch[def] = missing;
+        }
+    }
+
+    private static List<ResearchProjectDef> GetMissingResearch(ThingDef def)
+    {
+        List<ResearchProjectDef> missing = null;
+        foreach (var recipe in DefDatabase<RecipeDef>.AllDefsListForReading)
+        {
+            if (recipe.ProducedThingDef != def) continue;
+            if (recipe.researchPrerequisites != null)
+                foreach (var r in recipe.researchPrerequisites)
+                    if (!r.IsFinished)
+                        (missing ??= new List<ResearchProjectDef>()).Add(r);
+            return missing;
+        }
+        return null;
+    }
+
+    private static Texture2D GetGrayscale(Texture src)
+    {
+        if (src == null) return null;
+        if (_grayscaleCache.TryGetValue(src, out var cached) && cached != null) return cached;
+
+        var rt = RenderTexture.GetTemporary(src.width, src.height, 0, RenderTextureFormat.ARGB32);
+        Graphics.Blit(src, rt);
+        var prev = RenderTexture.active;
+        RenderTexture.active = rt;
+
+        var tex = new Texture2D(src.width, src.height, TextureFormat.RGBA32, false);
+        tex.ReadPixels(new Rect(0, 0, src.width, src.height), 0, 0);
+
+        RenderTexture.active = prev;
+        RenderTexture.ReleaseTemporary(rt);
+
+        var px = tex.GetPixels();
+        for (var i = 0; i < px.Length; i++)
+        {
+            var c = px[i];
+            var l = 0.299f * c.r + 0.587f * c.g + 0.114f * c.b;
+            px[i] = new Color(l, l, l, c.a);
+        }
+        tex.SetPixels(px);
+        tex.Apply();
+
+        _grayscaleCache[src] = tex;
+        return tex;
     }
 
     public override Vector2 InitialSize => new(WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -97,7 +157,42 @@ public class Dialog_MedalCatalog : Window
 
         // Icon
         var iconRect = new Rect(ROW_PADDING, curY + (rowHeight - ICON_SIZE) / 2f, ICON_SIZE, ICON_SIZE);
-        Widgets.DefIcon(iconRect, def);
+        if (_locked.Contains(def))
+        {
+            var gray = GetGrayscale(def.uiIcon);
+            if (gray != null)
+            {
+                GUI.color = new Color(0.5f, 0.5f, 0.5f, 1f);
+                GUI.DrawTexture(iconRect, gray);
+                GUI.color = Color.white;
+            }
+            else
+            {
+                Widgets.DefIcon(iconRect, def);
+            }
+
+            var lockSize = ICON_SIZE * 0.4f;
+            GUI.color = Dialog_MedalAwarded.GoldColor;
+            GUI.DrawTexture(
+                new Rect(iconRect.xMax - lockSize, iconRect.yMax - lockSize, lockSize, lockSize),
+                MedalTextures.LockedIcon);
+            GUI.color = Color.white;
+
+            if (_missingResearch.TryGetValue(def, out var missing) && missing.Count > 0)
+            {
+                var sb = new StringBuilder();
+                for (var i = 0; i < missing.Count; i++)
+                {
+                    if (i > 0) sb.Append(", ");
+                    sb.Append(missing[i].LabelCap);
+                }
+                TooltipHandler.TipRegion(iconRect, "ROCKET_MedalLockedResearch".Translate(sb.ToString()));
+            }
+        }
+        else
+        {
+            Widgets.DefIcon(iconRect, def);
+        }
 
         var textX = iconRect.xMax + ROW_PADDING;
         var textWidth = width - ICON_SIZE - (ROW_PADDING * 3);

@@ -55,7 +55,7 @@ public class ITab_MedalRecord : ITab
             Text.Font = GameFont.Tiny;
             GUI.color = MutedColor;
             var presenterName = medal.awardedBy.Dead
-                ? $"{medal.awardedBy.LabelShort} (deceased)"
+                ? "ROCKET_PawnDeceased".Translate(medal.awardedBy.NameFullColored).ToString()
                 : medal.awardedBy.NameFullColored.ToString();
             var presenterLine = "ROCKET_MedalPresentedBy".Translate(presenterName);
             var presenterHeight = Text.CalcHeight(presenterLine, rect.width);
@@ -77,7 +77,7 @@ public class ITab_MedalRecord : ITab
 
             var dateLine = dateStr;
             if (medal.ceremonyQuality >= 0)
-                dateLine += $" at a {CeremonyQuality.GetQualityLabel(medal.ceremonyQuality).CapitalizeFirst()} ceremony";
+                dateLine += "ROCKET_AwardedAtQualityCeremony".Translate(CeremonyQuality.GetQualityLabel(medal.ceremonyQuality).CapitalizeFirst());
 
             GUI.color = MutedColor;
             var dateHeight = Text.CalcHeight(dateLine, rect.width);
@@ -93,7 +93,7 @@ public class ITab_MedalRecord : ITab
             Text.Font = GameFont.Tiny;
             var days = (Find.TickManager.TicksGame - medal.awardedTick) / GenDate.TicksPerDay;
             GUI.color = MutedColor;
-            var daysText = $"Worn for {days} days";
+            var daysText = "ROCKET_MedalWornFor".Translate(days.ToString());
             var daysHeight = Text.CalcHeight(daysText, rect.width);
             Widgets.Label(new Rect(rect.x, curY, rect.width, daysHeight), daysText);
             GUI.color = Color.white;
@@ -167,7 +167,7 @@ public class ITab_MedalRecord : ITab
                     {
                         var label = entry.Label;
                         GUI.color = Color.grey;
-                        var line = $"May remove {label.CapitalizeFirst()} ({entry.chance.ToStringPercent()})";
+                        var line = "ROCKET_AwardingMayRemove".Translate(label.CapitalizeFirst(), entry.chance.ToStringPercent());
                         Widgets.Label(new Rect(rect.x, curY, rect.width, 24f), line);
                         curY += 24f;
                     }
@@ -178,7 +178,7 @@ public class ITab_MedalRecord : ITab
                     {
                         var label = entry.Label;
                         GUI.color = Color.grey;;
-                        var line = $"May grant {label.CapitalizeFirst()} ({entry.chance.ToStringPercent()})";
+                        var line = "ROCKET_AwardingMayGrant".Translate(label.CapitalizeFirst(), entry.chance.ToStringPercent());
                         Widgets.Label(new Rect(rect.x, curY, rect.width, 24f), line);
                         curY += 24f;
                     }

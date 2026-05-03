@@ -2,7 +2,6 @@
 <LanguageData>	
 	<ROCKET_MedalsTab>Medals</ROCKET_MedalsTab>
 	<ROCKET_NoMedals>No medals have been awarded to this colonist.</ROCKET_NoMedals>
-	<ROCKET_MedalAwardedTo>Awarded To: {0}</ROCKET_MedalAwardedTo>
 	<ROCKET_Record>Record</ROCKET_Record>
 	<ROCKET_AwardCeremony>Award Ceremony</ROCKET_AwardCeremony>
 	<ROCKET_BeginCeremony>Begin Ceremony</ROCKET_BeginCeremony>
@@ -11,6 +10,8 @@
 	<ROCKET_EditCitation>Edit Citation</ROCKET_EditCitation>
 	<ROCKET_ConfirmButton>Confirm</ROCKET_ConfirmButton>
 	<ROCKET_ClearButton>Clear</ROCKET_ClearButton>
+	<ROCKET_CloseButton>Close</ROCKET_CloseButton>
+	<ROCKET_PawnDeceased>{0} (Deceased)</ROCKET_PawnDeceased>
 	<ROCKET_CitationDesc>Write or edit the citation engraved on this medal.</ROCKET_CitationDesc>
 	<ROCKET_CeremonyDesc>Gather the colony to officially bestow this medal upon a colonist.</ROCKET_CeremonyDesc>
 	<ROCKET_DisabledAlreadyAwarded>Medal has already been awarded.</ROCKET_DisabledAlreadyAwarded>
@@ -22,4 +23,9 @@
 	<ROCKET_MustBeLeaderOrGuide>Must be the Leader or Moral Guide.</ROCKET_MustBeLeaderOrGuide>
 	<ROCKET_FailMedalNeedsCeremony>Medals can only be awarded via ceremonies</ROCKET_FailMedalNeedsCeremony>
 	<ROCKET_MedalCatalog>Medals</ROCKET_MedalCatalog>
+	<ROCKET_MedalLockedResearch>Locked. Required research: {0}</ROCKET_MedalLockedResearch>
+	<ROCKET_MedalWornFor>Worn for {0} days</ROCKET_MedalWornFor>
+	<ROCKET_AwardedAtQualityCeremony> at a {0} ceremony</ROCKET_AwardedAtQualityCeremony>
+	<ROCKET_AwardingMayRemove>May remove {0} ({1})</ROCKET_AwardingMayRemove>
+	<ROCKET_AwardingMayGrant>May grant {0} ({1})</ROCKET_AwardingMayGrant>
 </LanguageData>
