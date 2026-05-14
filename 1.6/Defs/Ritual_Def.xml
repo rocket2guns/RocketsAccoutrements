@@ -52,7 +52,7 @@
 	
 	<RitualBehaviorDef>
 		<defName>ROCKET_AwardMedalBehavior</defName>
-		<durationTicks>5000</durationTicks>
+		<durationTicks>2500</durationTicks>
 		<spectatorsLabel>Spectators</spectatorsLabel>
 		<spectatorGerund>spectate</spectatorGerund>
 		<roles>
@@ -127,6 +127,13 @@
 						<speakerInteraction>Speech_Leader</speakerInteraction>
 						<customPositions>
 							<li Class="RitualPosition_BesideThing"/>
+						</customPositions>
+					</li>
+					<li>
+						<roleId>awardee</roleId>
+						<dutyDef>ArriveToCell</dutyDef>
+						<customPositions>
+							<li Class="RitualPosition_InFrontThingCenter"/>
 						</customPositions>
 					</li>
 				</roleBehaviors>
