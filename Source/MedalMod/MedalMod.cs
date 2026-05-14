@@ -73,49 +73,95 @@ namespace MedalMod
 
         public override string SettingsCategory() => "Rocket's Medals";
 
-        // Draws the actual menu
+        private enum SettingsTab { General, Display }
+        private static SettingsTab currentTab = SettingsTab.General;
+        private static readonly List<TabRecord> tabBuf = new();
+
         public override void DoSettingsWindowContents(Rect inRect)
         {
-            Listing_Standard listing = new Listing_Standard();
-            listing.Begin(inRect);
+            const float tabBarHeight = 32f;
+            var contentRect = new Rect(inRect.x, inRect.y + tabBarHeight, inRect.width, inRect.height - tabBarHeight);
+
+            tabBuf.Clear();
+            tabBuf.Add(new TabRecord("General", () => currentTab = SettingsTab.General, currentTab == SettingsTab.General));
+            tabBuf.Add(new TabRecord("Display", () => currentTab = SettingsTab.Display, currentTab == SettingsTab.Display));
+
+            Widgets.DrawMenuSection(contentRect);
+            TabDrawer.DrawTabs(contentRect, tabBuf);
+
+            var inner = contentRect.ContractedBy(12f);
+            switch (currentTab)
+            {
+                case SettingsTab.General: DrawGeneralTab(inner); break;
+                case SettingsTab.Display: DrawDisplayTab(inner); break;
+            }
+        }
+
+        private static void DrawGeneralTab(Rect rect)
+        {
+            var listing = new Listing_Standard();
+            listing.Begin(rect);
             Text.Font = GameFont.Small;
-            listing.Gap(6f);
+
             listing.CheckboxLabeled(
-                "Require Ceremony",  
-                ref Settings.MedalsRequireCeremony, 
+                "Require Ceremony",
+                ref Settings.MedalsRequireCeremony,
                 "If enabled, medals can only be awarded to colonists via an award ceremony. If disabled, medals will be considered awarded by the first person to wear them."
             );
             listing.CheckboxLabeled(
-                "Lock Medals upon Award", 
-                ref Settings.LockMedalsUponAward, 
+                "Lock Medals upon Award",
+                ref Settings.LockMedalsUponAward,
                 "If enabled, once a medal is awarded to a pawn, it will default to being locked to the pawn inventory. This can be toggled individually on the dedicated tab. This setting does not affect biocoding."
             );
             listing.CheckboxLabeled(
-                "Show Medal Catalog Button", 
-                ref Settings.ShowMedalCatalog, 
-                "If enabled, a menu button will show to open a catalog of all medals in the game, including those added by mods. The catalog shows stats and effects of each medal."
-            );
-            listing.CheckboxLabeled(
-                "Draw Medals on Pawns", 
-                ref Settings.DrawMedalsOnPawns, 
-                "If enabled, medals will be rendered on pawns. Disabling this will stop medals being drawn on pawns. Use this to turn their rendering off."
-            );
-            listing.CheckboxLabeled(
-                "Prompt for Citation during Ceremony", 
-                ref Settings.PromptForCitationDuringRitual, 
+                "Prompt for Citation during Ceremony",
+                ref Settings.PromptForCitationDuringRitual,
                 "If enabled, a dialog will appear during award ceremonies to allow the user to enter a citation for the medal if one has not already been added to the medal. If disable a window will not appear, but citations can still be added prior to ceremony commencing."
             );
             listing.CheckboxLabeled(
-                "Dynamic Traits", 
-                ref Settings.MedalDynamicTraits, 
+                "Dynamic Traits",
+                ref Settings.MedalDynamicTraits,
                 "If enabled, medals can have a dynamic effect on traits such as gaining a decorated trait, or greedy, or losing wimp when receiving bravery awards."
             );
-            listing.Label($"Worn Size: {Settings.MedalScale.ToStringPercent()}");
-            Settings.MedalScale = listing.Slider(Settings.MedalScale, 0.1f, 2.0f);
-            listing.Label($"Displayed Medals: {Settings.MaxDisplayedMedals.ToStringCached()}");
-            listing.IntAdjuster(ref Settings.MaxDisplayedMedals, 1);
+
             listing.End();
-            base.DoSettingsWindowContents(inRect);
+        }
+
+        private static void DrawDisplayTab(Rect rect)
+        {
+            var listing = new Listing_Standard();
+            listing.Begin(rect);
+            Text.Font = GameFont.Small;
+
+            listing.CheckboxLabeled(
+                "Show Medal Catalog Button",
+                ref Settings.ShowMedalCatalog,
+                "If enabled, a menu button will show to open a catalog of all medals in the game, including those added by mods. The catalog shows stats and effects of each medal."
+            );
+            listing.CheckboxLabeled(
+                "Draw Medals on Pawns",
+                ref Settings.DrawMedalsOnPawns,
+                "If enabled, medals will be rendered on pawns. Disabling this will stop medals being drawn on pawns. Use this to turn their rendering off."
+            );
+
+            listing.Gap(10f);
+            listing.GapLine();
+            SubHeader(listing, "Worn Medals");
+
+            listing.Label($"Worn size: {Settings.MedalScale.ToStringPercent()}");
+            Settings.MedalScale = listing.Slider(Settings.MedalScale, 0.1f, 2.0f);
+            listing.Label($"Displayed medals: {Settings.MaxDisplayedMedals.ToStringCached()}");
+            listing.IntAdjuster(ref Settings.MaxDisplayedMedals, 1);
+
+            listing.End();
+        }
+
+        private static void SubHeader(Listing_Standard listing, string text)
+        {
+            Text.Font = GameFont.Medium;
+            listing.Label(text);
+            Text.Font = GameFont.Small;
+            listing.Gap(4f);
         }
         
         
