@@ -375,6 +375,28 @@
 	</ThingDef>
 
 	<ThingDef ParentName="ROCKET_LegendaryMedalBase">
+		<defName>ROCKET_Medal_DistinguishedFlying</defName>
+		<label>distinguished flying cross</label>
+		<description>Awarded to those who have distinguished themselves by single acts of heroism or extraordinary achievement while participating in aerial flight.</description>
+		<graphicData>
+			<texPath>Things/Medals/DistinguishedFlyingCross</texPath>
+		</graphicData>
+		<apparel>
+			<wornGraphicPath>Things/Medals/DistinguishedFlyingCross</wornGraphicPath>
+		</apparel>
+		<equippedStatOffsets>
+			<SocialImpact>0.3</SocialImpact>
+			<PsychicSensitivity>-0.05</PsychicSensitivity>
+		</equippedStatOffsets>
+		<modExtensions>
+			<li Class="MedalMod.MedalExtension">
+				<honorAwarded>4</honorAwarded>
+			</li>
+		</modExtensions>
+		<uiOrder>26</uiOrder>
+	</ThingDef>
+
+	<ThingDef ParentName="ROCKET_LegendaryMedalBase">
 		<defName>ROCKET_Medal_GoldCross</defName>
 		<label>gold cross</label>
 		<description>The highest bravery honor, featuring a gold cross.</description>

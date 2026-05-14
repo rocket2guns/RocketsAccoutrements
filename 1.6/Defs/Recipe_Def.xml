@@ -270,6 +270,15 @@
 	</RecipeDef>
 
 	<RecipeDef ParentName="ROCKET_LegendaryMedalRecipeBase">
+		<defName>ROCKET_Recipe_DistinguishedFlying</defName>
+		<label>craft distinguished flying cross</label>
+		<jobString>Crafting distinguished flying cross.</jobString>
+		<products>
+			<ROCKET_Medal_DistinguishedFlying>1</ROCKET_Medal_DistinguishedFlying>
+		</products>
+	</RecipeDef>
+
+	<RecipeDef ParentName="ROCKET_LegendaryMedalRecipeBase">
 		<defName>ROCKET_Recipe_GoldCross</defName>
 		<label>craft gold cross</label>
 		<jobString>Crafting gold cross.</jobString>

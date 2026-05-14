@@ -300,6 +300,9 @@ namespace MedalMod
     
     public class RitualOutcomeEffectWorkerAwardMedal : RitualOutcomeEffectWorker
     {
+        [System.ThreadStatic]
+        public static bool ApplyingCeremonyAward;
+
         public RitualOutcomeEffectWorkerAwardMedal() => InitializeSafety();
 
         public RitualOutcomeEffectWorkerAwardMedal(RitualOutcomeEffectDef def) : base(def) => InitializeSafety();
@@ -315,6 +318,13 @@ namespace MedalMod
         private const int MEDALS_EXHALTED = 7;
 
         public override void Apply(float progress, Dictionary<Pawn, int> totalPresence, LordJob_Ritual jobRitual)
+        {
+            ApplyingCeremonyAward = true;
+            try { ApplyImpl(progress, totalPresence, jobRitual); }
+            finally { ApplyingCeremonyAward = false; }
+        }
+
+        private void ApplyImpl(float progress, Dictionary<Pawn, int> totalPresence, LordJob_Ritual jobRitual)
         {
             if (jobRitual.selectedTarget.Thing is not RocketMedal medal) return;
             var awardee = jobRitual.assignments.FirstAssignedPawn("awardee");
@@ -631,11 +641,50 @@ namespace MedalMod
     {
         public static void Postfix(Pawn pawn, Apparel ap, ref float __result)
         {
-            if (ap is RocketMedal) 
+            if (ap is RocketMedal)
                 __result = -10000f;
         }
     }
-    
+
+    [HarmonyPatch(typeof(ApparelUtility), nameof(ApparelUtility.HasPartsToWear))]
+    public static class Patch_ApparelUtility_HasPartsToWear
+    {
+        public static void Postfix(Pawn p, ThingDef apparel, ref bool __result)
+        {
+            if (!__result || p == null) return;
+            if (!typeof(RocketMedal).IsAssignableFrom(apparel.thingClass)) return;
+
+            if (RitualOutcomeEffectWorkerAwardMedal.ApplyingCeremonyAward) return;
+            if (PawnOwnsBiocodedMedalDef(p, apparel)) return;
+
+            if (MedalMod.Settings.MedalsRequireCeremony && !MedalMod.CheckRitualStatus(p))
+                __result = false;
+        }
+
+        private static bool PawnOwnsBiocodedMedalDef(Pawn p, ThingDef apparelDef)
+        {
+            var worn = p.apparel?.WornApparel;
+            if (worn != null)
+            {
+                for (var i = 0; i < worn.Count; i++)
+                {
+                    if (worn[i].def != apparelDef) continue;
+                    if (worn[i] is RocketMedal m && m.BiocodeComp is { Biocoded: true } b && b.CodedPawn == p)
+                        return true;
+                }
+            }
+            var inv = p.inventory?.innerContainer;
+            if (inv == null) return false;
+            for (var i = 0; i < inv.Count; i++)
+            {
+                if (inv[i].def != apparelDef) continue;
+                if (inv[i] is RocketMedal m && m.BiocodeComp is { Biocoded: true } b && b.CodedPawn == p)
+                    return true;
+            }
+            return false;
+        }
+    }
+
     [HarmonyPatch(typeof(Pawn_ApparelTracker), nameof(Pawn_ApparelTracker.Wear))]
     public static class PatchMedalBiocodeManual
     {
@@ -646,7 +695,11 @@ namespace MedalMod
             var comp = medal.BiocodeComp;
             if (comp == null) return true;
 
-            if (MedalMod.Settings.MedalsRequireCeremony && !MedalMod.CheckRitualStatus(__instance.pawn) && !comp.Biocoded)
+            // The bestowal Apply path bypasses the ceremony rejection — see ApplyingCeremonyAward.
+            if (!RitualOutcomeEffectWorkerAwardMedal.ApplyingCeremonyAward
+                && MedalMod.Settings.MedalsRequireCeremony
+                && !MedalMod.CheckRitualStatus(__instance.pawn)
+                && !comp.Biocoded)
             {
                 Messages.Message($"ROCKET_FailMedalNeedsCeremony".Translate(), MessageTypeDefOf.RejectInput, false);
                 return false;
