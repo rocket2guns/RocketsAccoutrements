@@ -94,7 +94,7 @@
 				<filter>
 					<thingDefs><li>Hyperweave</li></thingDefs>
 				</filter>
-				<count>20</count>
+				<count>5</count>
 			</li>
 		</ingredients>
 		<fixedIngredientFilter>
@@ -129,7 +129,7 @@
 				<filter>
 					<thingDefs><li>Hyperweave</li></thingDefs>
 				</filter>
-				<count>20</count>
+				<count>5</count>
 			</li>
 		</ingredients>
 		<fixedIngredientFilter>
