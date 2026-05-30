@@ -752,7 +752,7 @@ namespace MedalMod
                 return;
             }
 
-            if (parms.facing == Rot4.North)
+            if (parms.facing == Rot4.North && !node.apparel.def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead))
             {
                 __result = false;
                 return;
@@ -829,6 +829,10 @@ namespace MedalMod
         {
             if (node is not PawnRenderNode_Apparel apparelNode || apparelNode.apparel is not RocketMedal) return 0f;
             var bodyModifier = 1.0f; // Default for Male
+            
+            if (apparelNode.apparel.def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead))
+                return bodyModifier * MedalMod.Settings.MedalScale * 1.25f;
+            
             var bodyType = parms.pawn?.story?.bodyType;
             if (bodyType == null) return bodyModifier;
             if (bodyType == BodyTypeDefOf.Hulk) bodyModifier = 1.15f; 
@@ -855,9 +859,10 @@ namespace MedalMod
             var scale = PatchMedalScale.GetScale(node, parms);
             var indexOffset = 0.1f * scale;
             var bodyType = parms.pawn?.story?.bodyType;
+            var bodyPartGroups = apparelNode.apparel?.def?.apparel?.bodyPartGroups;
             var shift = 0.02f * scale;
-            var maxMedalsPerRow = 3; 
-
+            var maxMedalsPerRow = 3;
+            
             if (bodyType != null)
             {
                 if (bodyType == BodyTypeDefOf.Hulk || bodyType == BodyTypeDefOf.Fat)
@@ -869,15 +874,20 @@ namespace MedalMod
                     maxMedalsPerRow = 3; 
                 }
             }
-            __result.x += (parms.facing == Rot4.West || parms.facing == Rot4.East) ? 0 : shift;
+
+            if (bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead))
+                maxMedalsPerRow = 8;
+            else
+                __result.x += (parms.facing == Rot4.West || parms.facing == Rot4.East) ? 0 : shift;
 
             var worn = parms.pawn.apparel.WornApparel; // This is a List<Apparel>
             var totalMedals = 0;
             var myIndex = -1;
 
+            //medals per body part get grouped together - usually Torso, UpperHead
             for (var i = 0; i < worn.Count; i++)
             {
-                if (worn[i] is RocketMedal)
+                if (worn[i] is RocketMedal && worn[i].def.apparel.bodyPartGroups.Equals(bodyPartGroups))
                 {
                     if (worn[i] == apparelNode.apparel)
                         myIndex = totalMedals;
@@ -906,13 +916,23 @@ namespace MedalMod
             // Apply X shift using our new 'centeredCol' instead of the raw 'col'
             var baseX = (parms.facing == Rot4.West || parms.facing == Rot4.East) ? 0 : BaseXOffset;
             var shiftX = baseX + (centeredCol * indexOffset);
+            
             if (parms.facing == Rot4.West || parms.facing == Rot4.North)
                 __result.x -= shiftX;
             else
                 __result.x += shiftX;
 
             // Apply Z (Vertical) shift
-            __result.z -= (row * RowZDrop * scale);
+            if (bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead))
+            {
+                if (parms.facing == Rot4.South)
+                    __result.x -= BaseXOffset * 10;
+                if (parms.facing == Rot4.North)
+                    __result.x += BaseXOffset * 10;
+                __result.z -= (row * (RowZDrop / 2 ) * scale) - 0.75f;
+            } 
+            else
+                __result.z -= (row * (RowZDrop) * scale);
         }
     }
 }
